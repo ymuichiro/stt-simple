@@ -1,0 +1,63 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Setup Python
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv pip install -r requirements.txt
+      
+      - name: Test Python
+        run: |
+          source .venv/bin/activate
+          .venv/bin/python features/whisper_transcription/tests/test_basic.py
+          .venv/bin/ruff check features/whisper_transcription/
+          .venv/bin/ty check features/whisper_transcription/
+      
+      - name: Build Swift App
+        run: |
+          cd STTApp
+          swift build --release
+      
+      - name: Create App Bundle
+        run: |
+          cd STTApp
+          ./scripts/create_app.sh
+      
+      - name: Create DMG
+        run: |
+          cd STTApp
+          ./scripts/create_dmg.sh
+      
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: STTApp-dmg
+          path: STTApp/*.dmg
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: STTApp/*.dmg
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

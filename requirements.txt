@@ -1,0 +1,8 @@
+openai-whisper
+torch
+ffmpeg-python
+setuptools-rust
+scipy
+numpy
+ty
+ruff
