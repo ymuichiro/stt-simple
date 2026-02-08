@@ -33,7 +33,6 @@ final class MultiProcessManager: @unchecked Sendable {
         // Auto-restarting immediately can amplify the pressure and create a restart storm.
         status != 9
     }
-
     init(processManagerFactory: @escaping () -> any PythonProcessManaging = { PythonProcessManager() }) {
         self.processManagerFactory = processManagerFactory
     }
