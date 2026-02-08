@@ -1,6 +1,35 @@
 #!/bin/bash
 set -e
 
+validate_app_bundle_layout() {
+    local bundle_path="$1"
+    local invalid_entries
+
+    if [ ! -d "${bundle_path}/Contents" ]; then
+        echo "❌ Error: ${bundle_path} is missing Contents directory"
+        exit 1
+    fi
+
+    invalid_entries="$(find "${bundle_path}" -mindepth 1 -maxdepth 1 ! -name 'Contents' -print)"
+    if [ -n "${invalid_entries}" ]; then
+        echo "❌ Error: Unexpected items found at ${bundle_path} root (only Contents is allowed):"
+        echo "${invalid_entries}"
+        exit 1
+    fi
+}
+
+strip_code_signature_if_present() {
+    local target_path="$1"
+
+    if codesign -dv "${target_path}" >/dev/null 2>&1; then
+        echo "Removing existing code signature: ${target_path}"
+        if ! codesign --remove-signature "${target_path}" >/dev/null 2>&1; then
+            echo "❌ Error: Failed to remove code signature from ${target_path}"
+            exit 1
+        fi
+    fi
+}
+
 echo "Creating KotoType.app bundle..."
 echo ""
 echo "注意: whisper_server バイナリ（dist/whisper_server）が必須です"
@@ -54,12 +83,14 @@ mkdir -p "${RESOURCES_DIR}"
 echo "Copying executable..."
 cp "${EXECUTABLE_SOURCE}" "${MACOS_DIR}/${APP_NAME}"
 chmod +x "${MACOS_DIR}/${APP_NAME}"
+strip_code_signature_if_present "${MACOS_DIR}/${APP_NAME}"
 
 # whisper_serverバイナリをコピー
 if [ -f "../dist/whisper_server" ]; then
     echo "Copying whisper_server binary..."
     cp "../dist/whisper_server" "${RESOURCES_DIR}/"
     chmod +x "${RESOURCES_DIR}/whisper_server"
+    strip_code_signature_if_present "${RESOURCES_DIR}/whisper_server"
 else
     echo "❌ Error: whisper_server binary not found in ../dist/"
     echo "Please run: cd .. && make build-server"
@@ -141,9 +172,8 @@ EOF
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${APP_VERSION}" "${CONTENTS_DIR}/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${APP_VERSION}" "${CONTENTS_DIR}/Info.plist"
 
-# アドホック署名
-echo "Applying ad-hoc signature..."
-codesign --force --deep --sign - "${BUNDLE_NAME}" 2>/dev/null || true
+echo "Validating app bundle layout..."
+validate_app_bundle_layout "${BUNDLE_NAME}"
 
 echo "✅ ${BUNDLE_NAME} created successfully!"
 echo "Bundle location: $(pwd)/${BUNDLE_NAME}"

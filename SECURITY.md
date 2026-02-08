@@ -97,9 +97,9 @@ No ongoing data transmission occurs during normal operation.
 
 ### Code Signing
 
-Current status: **Ad-hoc signing**
+Current status: **Unsigned distribution (no Apple Developer signing)**
 
-- KotoType is distributed with ad-hoc signing
+- KotoType is currently distributed without code signing
 - This may trigger Gatekeeper warnings on first launch
 - Users can bypass with "Right-click → Open"
 - Future releases may include proper Apple Developer signing
