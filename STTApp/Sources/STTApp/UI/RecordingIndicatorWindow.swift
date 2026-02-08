@@ -5,7 +5,7 @@ class RecordingIndicatorWindow: NSPanel {
     private var hostingController: NSHostingController<RecordingIndicatorView>?
     
     init() {
-        let contentRect = NSRect(x: 0, y: 0, width: 60, height: 60)
+        let contentRect = NSRect(x: 0, y: 0, width: 104, height: 72)
         
         super.init(
             contentRect: contentRect,

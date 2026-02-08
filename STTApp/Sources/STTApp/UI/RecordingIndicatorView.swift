@@ -7,58 +7,157 @@ enum IndicatorState {
 
 struct RecordingIndicatorView: View {
     let state: IndicatorState
-    
+
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.black.opacity(0.8))
-                .frame(width: 60, height: 40)
-            
-            WaveformView(color: barColor)
-        }
-        .frame(width: 70, height: 50)
-    }
-    
-    private var barColor: Color {
-        switch state {
-        case .recording:
-            return .white
-        case .processing:
-            return .blue
-        }
-    }
-}
+            IndicatorBackground(state: state)
 
-struct WaveformView: View {
-    let color: Color
-    
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(0..<6) { i in
-                WaveformBar(
-                    offset: Double(i) * 0.3,
-                    color: color
-                )
-                .frame(width: 2, height: 24)
+            switch state {
+            case .recording:
+                RecordingContent()
+            case .processing:
+                ProcessingContent()
             }
         }
-        .frame(width: 30, height: 30)
+        .frame(width: 92, height: 56)
+        .padding(6)
+        .animation(.easeInOut(duration: 0.2), value: state)
     }
 }
 
-struct WaveformBar: View {
-    let offset: Double
-    let color: Color
-    
+private struct IndicatorBackground: View {
+    let state: IndicatorState
+
     var body: some View {
-        RoundedRectangle(cornerRadius: 1)
-            .fill(color)
-            .frame(width: 2, height: height)
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.black.opacity(0.85),
+                        Color.black.opacity(0.72),
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(borderColor, lineWidth: 1.0)
+            )
+            .shadow(color: .black.opacity(0.35), radius: 10, x: 0, y: 4)
     }
-    
-    private var height: CGFloat {
-        let baseHeight: CGFloat = 10
-        let amplitude: CGFloat = 4
-        return baseHeight + abs(amplitude * sin(offset))
+
+    private var borderColor: Color {
+        switch state {
+        case .recording:
+            return Color.red.opacity(0.55)
+        case .processing:
+            return Color.blue.opacity(0.55)
+        }
+    }
+}
+
+private struct RecordingContent: View {
+    @State private var pulse = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.red.opacity(0.92))
+                    .frame(width: 12, height: 12)
+
+                Circle()
+                    .stroke(Color.red.opacity(0.45), lineWidth: 2)
+                    .frame(width: 24, height: 24)
+                    .scaleEffect(pulse ? 1.28 : 0.86)
+                    .opacity(pulse ? 0.08 : 0.7)
+            }
+
+            WaveformAnimation(color: .white)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
+    }
+}
+
+private struct WaveformAnimation: View {
+    let color: Color
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 24.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+
+            HStack(spacing: 3) {
+                ForEach(0..<7, id: \.self) { index in
+                    Capsule(style: .continuous)
+                        .fill(color.opacity(0.95))
+                        .frame(width: 3, height: barHeight(index: index, time: t))
+                }
+            }
+            .frame(width: 36, height: 26)
+        }
+    }
+
+    private func barHeight(index: Int, time: TimeInterval) -> CGFloat {
+        let base: CGFloat = 8
+        let amplitude: CGFloat = 12
+        let value = sin((time * 5.2) + (Double(index) * 0.6))
+        return base + CGFloat(abs(value)) * amplitude
+    }
+}
+
+private struct ProcessingContent: View {
+    @State private var rotating = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .stroke(Color.blue.opacity(0.22), lineWidth: 2.5)
+                    .frame(width: 20, height: 20)
+
+                Circle()
+                    .trim(from: 0.1, to: 0.78)
+                    .stroke(
+                        AngularGradient(
+                            colors: [Color.blue.opacity(0.2), Color.blue.opacity(0.95)],
+                            center: .center
+                        ),
+                        style: StrokeStyle(lineWidth: 2.8, lineCap: .round)
+                    )
+                    .frame(width: 20, height: 20)
+                    .rotationEffect(.degrees(rotating ? 360 : 0))
+            }
+
+            ProcessingDots()
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 1.1).repeatForever(autoreverses: false)) {
+                rotating = true
+            }
+        }
+    }
+}
+
+private struct ProcessingDots: View {
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 18.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            HStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { index in
+                    let phase = max(0.2, (sin((t * 7.0) + (Double(index) * 1.1)) + 1) / 2)
+                    Circle()
+                        .fill(Color.blue.opacity(0.95))
+                        .frame(width: 4, height: 4)
+                        .opacity(phase)
+                        .scaleEffect(0.8 + (phase * 0.35))
+                }
+            }
+            .frame(width: 24, height: 12)
+        }
     }
 }
