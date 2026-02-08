@@ -1,72 +1,72 @@
-# KotoType - 設計方針
+# KotoType - Design Document
 
-## 概要
+## Overview
 
-Macネイティブの音声文字起こしアプリケーション。OpenAI Whisperを使用し、グローバルホットキー（Ctrl+Alt長押し）で音声を認識し、カーソル位置にテキスト入力する。
+A Mac-native voice-to-text application using OpenAI Whisper. The app recognizes speech via a global hotkey (Ctrl+Option+Space) and types the transcribed text at the cursor position.
 
-## アーキテクチャ
+## Architecture
 
-### 言語・フレームワーク選定
+### Technology Stack Selection
 
-**Swift + SwiftUI + Python（混合アプローチ）**
+**Swift + SwiftUI + Python (Hybrid Approach)**
 
-- **Swift + SwiftUI**: MacネイティブアプリのUI・グローバルホットキー・キーボード入力シミュレーション
-- **Python**: OpenAI Whisperによる音声認識
+- **Swift + SwiftUI**: Mac-native UI, global hotkeys, and keyboard input simulation
+- **Python**: OpenAI Whisper for speech recognition
 
-### システム構成
+### System Architecture
 
 ```
 ┌─────────────────────────────────────┐
-│  Swift アプリ (フロントエンド)        │
-│  - メニューバー常駐                   │
-│  - グローバルホットキー検知            │
-│  - 音声録音                          │
-│  - キーボード入力シミュレーション       │
+│  Swift App (Frontend)               │
+│  - Menu bar resident                │
+│  - Global hotkey detection          │
+│  - Audio recording                  │
+│  - Keyboard input simulation        │
 └────────────┬────────────────────────┘
-             │ 標準入出力で通信
-             │ (音声ファイルパス/テキスト)
+             │ Stdio communication
+             │ (audio file path / text)
 ┌────────────┴────────────────────────┐
-│  Python スクリプト (バックエンド)     │
-│  - Whisperによる文字起こし           │
+│  Python Script (Backend)             │
+│  - Whisper transcription            │
 └─────────────────────────────────────┘
 ```
 
-## 主要コンポーネント
+## Core Components
 
-### 1. Swift アプリ
+### 1. Swift Application
 
-**ライブラリ**:
+**Libraries**:
 - SwiftUI (UI)
-- AppKit (グローバルホットキー、CGEvent)
+- AppKit (Global hotkeys, CGEvent)
 
-**機能**:
-- メニューバーに常駐（アイコン + メニュー）
-- `Ctrl+Alt` 長押しのグローバルイベント監視
-- 録音の開始・停止（AVFoundation）
-- Pythonプロセス起動・通信（Process）
-- 他アプリへのテキスト入力（CGEvent）
-- 音声ファイル（`wav` / `mp3`）取り込み文字起こし
-- 文字起こし履歴の保存・参照
-- ログイン時自動起動（ON/OFF）
-- 初回セットアップ（権限・FFmpegチェック）
+**Features**:
+- Menu bar resident (icon + menu)
+- Global event monitoring for `Ctrl+Option+Space` hotkey
+- Recording start/stop (AVFoundation)
+- Python process launch and communication (Process)
+- Text input to other applications (CGEvent)
+- Audio file import (`wav` / `mp3`) for transcription
+- History management (save/view past transcriptions)
+- Auto-start at login (toggle on/off)
+- First-time setup wizard (permissions & FFmpeg check)
 
-### 2. Python スクリプト
+### 2. Python Script
 
-**ライブラリ**:
-- `faster-whisper` (音声認識)
-- `sys` (標準入出力)
-- `ffmpeg` (ユーザー環境にインストールされた実行ファイルを利用)
+**Libraries**:
+- `faster-whisper` (speech recognition)
+- `sys` (standard I/O)
+- `ffmpeg` (uses user-installed executable)
 
-**機能**:
-- 音声ファイルパスを受け取る
-- Whisperで文字起こし（精度重視設定）
-- 結果を標準出力
+**Features**:
+- Receive audio file path from stdin
+- Transcribe with Whisper (accuracy-optimized settings)
+- Output result to stdout
 
-#### Whisperモデル設定（精度重視）
+#### Whisper Model Configuration (Accuracy-Optimized)
 
-**使用モデル**: `large-v3-turbo`（最新のLarge Turboモデル）
+**Model**: `large-v3-turbo` (latest Large Turbo model)
 
-**精度向上のためのパラメータ**:
+**Parameters for Improved Accuracy**:
 
 ```python
 from faster_whisper import WhisperModel
@@ -80,103 +80,103 @@ model = WhisperModel(
 segments, info = model.transcribe(
     audio_file,
     
-    # 言語設定
-    language="ja",              # 日本語固定（自動検出より精度向上）
-    task="transcribe",          # 文字起こし（翻訳ではなく）
+    # Language settings
+    language="ja",              # Fixed Japanese (more accurate than auto-detection)
+    task="transcribe",          # Transcription (not translation)
     
-    # デコーディング精度設定
-    temperature=0.0,            # 最も確定的な出力（精度重視）
-    beam_size=5,                # ビームサーチで探索（デフォルト1から増加）
-    best_of=5,                  # 複数サンプルから最良を選択
+    # Decoding accuracy settings
+    temperature=0.0,            # Most deterministic output (accuracy-focused)
+    beam_size=5,                # Beam search exploration (increased from default 1)
+    best_of=5,                  # Select best from multiple samples
     
-    # 品質フィルタ設定
-    vad_filter=True,             # VAD（Voice Activity Detection）を使用
-    vad_parameters={"threshold": 0.5},  # VADの閾値
-    no_speech_threshold=0.6,    # 無音検出の閾値
-    compression_ratio_threshold=2.4,  # 圧縮率による品質判定
+    # Quality filter settings
+    vad_filter=True,             # Use VAD (Voice Activity Detection)
+    vad_parameters={"threshold": 0.5},  # VAD threshold
+    no_speech_threshold=0.6,    # Silence detection threshold
+    compression_ratio_threshold=2.4,  # Quality judgment by compression ratio
     
-    # その他
-    initial_prompt="これは会話の文字起こしです。正確な日本語で出力してください。"  # 初期プロンプト
+    # Other
+    initial_prompt="これは会話の文字起こしです。正確な日本語で出力してください。"  # Initial prompt
 )
 
-# 結果を結合
+# Combine results
 text = " ".join([segment.text for segment in segments])
 ```
 
-**パラメータの説明**:
-- **temperature=0.0**: 最も確定的な出力を生成し、一貫性を向上
-- **beam_size=5 & best_of=5**: ビームサーチで複数候補から最適な選択
-- **compute_type="int8"**: 8ビット量子化でメモリ使用量を削減し、高速化
-- **language="ja"**: 日本語固定で自動検出の誤りを回避
-- **initial_prompt**: 文脈を与えて期待する出力形式を誘導
+**Parameter Explanations**:
+- **temperature=0.0**: Generates most deterministic output, improving consistency
+- **beam_size=5 & best_of=5**: Beam search selects optimal from multiple candidates
+- **compute_type="int8"**: 8-bit quantization reduces memory usage and increases speed
+- **language="ja"**: Fixed Japanese avoids auto-detection errors
+- **initial_prompt**: Provides context to guide expected output format
 
-**処理時間への影響**:
-- モデルサイズ（large-v3-turbo）とint8量子化により、処理時間は中程度の音声で5-10秒程度
-- faster-whisperの最適化により、CPUでも高速に処理可能
+**Processing Time Impact**:
+- Model size (large-v3-turbo) and int8 quantization result in 5-10 second processing time for medium audio
+- faster-whisper optimizations enable fast CPU processing
 
-## 実装フロー
+## Implementation Flow
 
-1. **初期化**:
-   - Swiftアプリ起動
-   - 初期セットアップ画面で必須チェックを実行
-     - アクセシビリティ権限
-     - マイク権限
-     - `ffmpeg` コマンド
-   - Pythonバックエンドは自動解決
-     - リリース版: 同梱 `whisper_server` を必須利用（ユーザー環境にPython/uvは不要）
-     - 開発版: `uv run` で依存関係を自動準備して起動
-   - 条件を満たしたらメニューバー常駐モードへ移行
-   - Pythonプロセスをバックグラウンドで起動
+1. **Initialization**:
+   - Launch Swift app
+   - First-time setup wizard checks:
+     - Accessibility permissions
+     - Microphone permissions
+     - `ffmpeg` command availability
+   - Python backend is auto-resolved:
+     - Release: Use bundled `whisper_server` (no Python/uv needed for users)
+     - Development: `uv run` auto-prepares dependencies and launches
+   - Transition to menu bar resident mode when conditions are met
+   - Launch Python process in background
 
-2. **待機状態**:
-   - グローバルホットキー監視開始
+2. **Idle State**:
+   - Start global hotkey monitoring
 
-3. **録音開始** (`Ctrl+Alt` 長押し):
-   - 録音開始
-   - ユーザーに視覚的フィードバック（メニューバーアイコンの色変更など）
+3. **Recording Start** (`Ctrl+Option+Space` press):
+   - Start recording
+   - Provide visual feedback (menu bar icon color change, etc.)
 
-4. **録音停止** (`Ctrl+Alt` リリース):
-   - 録音停止
-   - 音声ファイルを一時保存
-   - Pythonにファイルパスを送信
+4. **Recording Stop** (`Ctrl+Option+Space` release):
+   - Stop recording
+   - Save audio file temporarily
+   - Send file path to Python
 
-5. **文字起こし**:
-   - Whisperで処理
-   - 結果をSwiftに返却
+5. **Transcription**:
+   - Process with Whisper
+   - Return result to Swift
 
-6. **入力**:
-   - Swiftが結果を受け取り
-   - CGEventで現在のカーソル位置にテキスト入力
+6. **Input**:
+   - Swift receives result
+   - Type text at current cursor position using CGEvent
 
-7. **履歴管理**:
-   - 録音/取り込み結果をApplication Support配下へJSON保存
-   - メニューから履歴ウィンドウで参照・コピー
+7. **History Management**:
+   - Save recording/import results to JSON in Application Support
+   - View/copy from history window via menu
 
-8. **起動設定**:
-   - Settingsのトグルでログイン時自動起動を切り替え
-   - `ServiceManagement`で登録状態を反映
+8. **Launch Settings**:
+   - Toggle auto-start at login from Settings
+   - Reflect registration status with `ServiceManagement`
 
-## リリース設計
+## Release Design
 
-- `VERSION` ファイルで配布版バージョンを管理
-- `main` への push で `v<VERSION>.<run_number>` 形式のタグを自動作成
-- タグ push で GitHub Actions が `.app/.dmg` をビルド
-- `.dmg` をタグ Release に添付し、配布用インストーラーとして公開
-- GPL リスク回避のため FFmpeg は配布物へ同梱せず、初期セットアップで環境側 `ffmpeg` を検証
+- Manage distribution version with `VERSION` file
+- Pushing to `main` automatically creates tag in format `v<VERSION>.<run_number>`
+- Tag push triggers GitHub Actions to build `.app/.dmg`
+- Attach `.dmg` to tag Release as distribution installer
+- Avoid GPL risk by not bundling FFmpeg, validate system `ffmpeg` in initial setup
 
-## シンプルさを維持するための設計方針
+## Design Principles for Simplicity
 
-1. **最小限のUI**: メニューバー常駐のみ、複雑な設定画面なし
-2. **単一設定**: ホットキーは固定（Ctrl+Alt）でユーザー設定不可
-3. **一時ファイル**: 録音ファイルは一時的に保存し、使用後削除
-4. **同期通信**: Pythonとの通信は同期的に行い、処理を単純化
-5. **エラーハンドリング最小化**: 基本的なエラーのみ処理
+1. **Minimal UI**: Menu bar resident only, no complex settings screens
+2. **Single Setting**: Fixed hotkey (Ctrl+Option+Space), not user-customizable
+3. **Temporary Files**: Save recording files temporarily, delete after use
+4. **Synchronous Communication**: Communicate with Python synchronously to simplify processing
+5. **Minimal Error Handling**: Handle only essential errors
 
-## ディレクトリ構成
+## Directory Structure
 
 ```
 koto-type/
-├── KotoType/                    # Swift アプリ
+├── KotoType/                    # Swift app
 │   ├── Sources/KotoType/
 │   │   ├── App/
 │   │   ├── Audio/
@@ -186,16 +186,23 @@ koto-type/
 │   │   └── Support/
 │   └── Tests/
 ├── python/
-│   └── whisper_server.py     # Python スクリプト
+│   └── whisper_server.py     # Python script
 ├── tests/
-│   └── python/               # Pythonテスト
-├── pyproject.toml           # Python依存
+│   └── python/               # Python tests
+├── pyproject.toml           # Python dependencies
 └── README.md
 ```
 
-## 実装の容易さ
+## Implementation Ease
 
-- **グローバルホットキー**: SwiftのNSEvent.monitorで数行で実装可能
-- **音声録音**: AVFoundationを使用、標準的な録音コード
-- **Whisper**: Pythonなら `whisper.load_model()` と `model.transcribe()` の2行
-- **キーボード入力**: CGEventCreateKeyboardEvent でシンプルに実装
+- **Global Hotkey**: Implementable in few lines with Swift's NSEvent.monitor
+- **Audio Recording**: Standard recording code using AVFoundation
+- **Whisper**: Just two lines in Python: `whisper.load_model()` and `model.transcribe()`
+- **Keyboard Input**: Simple implementation with CGEventCreateKeyboardEvent
+
+## Performance Goals
+
+- **Startup Time**: Under 3 seconds
+- **Recording Start**: Within 100ms of hotkey press
+- **Transcription**: 5-15 seconds (depends on audio length)
+- **Text Input**: Within 500ms of receiving result

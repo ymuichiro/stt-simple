@@ -1,243 +1,256 @@
 # KotoType
 
-Macネイティブの音声文字起こしアプリケーション。
+<div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Swift](https://img.shields.io/badge/Swift-6.2-orange.svg)
-![Python](https://img.shields.io/badge/Python-3.13-blue.svg)
+A Mac-native voice-to-text application with high-accuracy transcription powered by OpenAI Whisper.
 
-## 特徴
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/koto-type/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Swift](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
+[![Python](https://img.shields.io/badge/Python-3.13-blue.svg)](https://python.org)
+[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos)
+[![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-enabled-brightgreen.svg)](CODE_OF_CONDUCT.md)
 
-- メニューバー常駐アプリ
-- グローバルホットキー（Ctrl+Option+Space）で録音開始/停止
-- OpenAI Whisperによる高精度な文字起こし
-- 自動でテキストをカーソル位置に入力
-- 音声前処理によるノイズ低減（スペクトルノイズ除去 + 正規化）
-- 過去の文字起こし結果を履歴で参照
-- UIから`wav`/`mp3`音声ファイルを取り込み文字起こし
-- ログイン時の自動起動 ON/OFF
-- 初回起動時のセットアップ画面（権限・FFmpegチェック）
-- 完全オープンソース（MIT License）
+[![GitHub stars](https://img.shields.io/github/stars/yourusername/koto-type?style=social)](https://github.com/yourusername/koto-type/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/yourusername/koto-type?style=social)](https://github.com/yourusername/koto-type/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/yourusername/koto-type)](https://github.com/yourusername/koto-type/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/yourusername/koto-type)](https://github.com/yourusername/koto-type/pulls)
 
-## インストール
+**[Documentation](#documentation) • [Installation](#installation) • [Usage](#usage) • [Contributing](#contributing) • [Support](#support)**
 
-### DMGからインストール（推奨）
+</div>
 
-1. [最新リリース](https://github.com/yourusername/koto-type/releases/latest)からKotoType.dmgをダウンロード
-2. ダウンロードしたDMGをダブルクリック
-3. KotoType.appをApplicationsフォルダにドラッグ
-4. 初回起動時のセキュリティ警告で「開く」をクリック
+## Features
 
-### ソースからビルド
+- **Menu Bar Application**: Resides in the menu bar for quick access
+- **Global Hotkey**: Record audio with `Ctrl+Option+Space`
+- **High-Accuracy Transcription**: Powered by OpenAI Whisper with optimized settings
+- **Automatic Text Input**: Automatically types transcribed text at the cursor position
+- **Audio Preprocessing**: Noise reduction with spectral subtraction and normalization
+- **History Management**: Access past transcriptions from the history menu
+- **Audio File Import**: Import `wav`/`mp3` files for transcription
+- **Auto-Launch**: Toggle auto-start at login
+- **First-Time Setup**: Comprehensive setup wizard for permissions and dependencies
+- **Open Source**: Fully open-source under MIT License
 
-#### 前提条件
+## Installation
 
-- macOS 13.0以降
-- Xcode 15.0以降
+### Install from DMG (Recommended)
+
+1. Download the latest [KotoType.dmg](https://github.com/yourusername/koto-type/releases/latest)
+2. Double-click the downloaded DMG file
+3. Drag KotoType.app to your Applications folder
+4. On first launch, click "Open" when prompted by the security warning
+
+### Build from Source
+
+#### Prerequisites
+
+- macOS 13.0 or later
+- Xcode 15.0 or later
 - Python 3.13
-- uv
+- [uv](https://github.com/astral-sh/uv) package manager
 
-#### インストール手順
+#### Installation Steps
 
-1. レポジトリをクローン
+1. Clone the repository
 ```bash
 git clone https://github.com/yourusername/koto-type.git
 cd koto-type
 ```
 
-2. 依存関係のインストール（開発依存含む）
+2. Install dependencies (including dev dependencies)
 ```bash
 make install-deps
 ```
 
-3. アプリケーションのビルド（Python + Swift）
+3. Build the application (Python + Swift)
 ```bash
 make build-all
 ```
 
-4. .appバンドルの作成
+4. Create the .app bundle
 ```bash
 cd KotoType
 ./scripts/create_app.sh
 ```
 
-5. （オプション）.dmgディスクイメージの作成
+5. (Optional) Create the .dmg disk image
 ```bash
 ./scripts/create_dmg.sh
 ```
 
-## 使用方法
+## Usage
 
-### Makefileを使用した操作（推奨）
+### Using Makefile (Recommended)
 
-すべての操作はMakefileから実行できます。利用可能なコマンドを確認するには：
+All operations can be executed through the Makefile. To see available commands:
 
 ```bash
 make help
 ```
 
-#### アプリケーション
+#### Application Commands
 
-- `make run-app` - Swiftアプリケーションを起動
-- `make run-server` - Pythonサーバーを起動（テスト用）
+- `make run-app` - Launch the Swift application
+- `make run-server` - Start the Python server (for testing)
 
-#### テスト
+#### Testing Commands
 
-- `make test-transcription` - 音声文字起こしテスト
-- `make test-benchmark` - 速度ベンチマークテスト
-- `make test-all` - すべてのテストを実行
+- `make test-transcription` - Run transcription tests
+- `make test-benchmark` - Run performance benchmarks
+- `make test-all` - Run all tests
 
-#### ビルド
+#### Build Commands
 
-- `make build-server` - Pythonサーバーバイナリをビルド（PyInstaller）
-- `make build-app` - Swiftアプリケーションをビルド
-- `make build-all` - すべてのビルド（Python + Swift）
-- `make install-deps` - Python依存関係をインストール（開発依存含む）
+- `make build-server` - Build Python server binary (PyInstaller)
+- `make build-app` - Build Swift application
+- `make build-all` - Build both Python and Swift
+- `make install-deps` - Install Python dependencies (including dev)
 
-#### ユーティリティ
+#### Utility Commands
 
-- `make clean` - 一時ファイルを削除
-- `make view-log` - サーバーログを表示
+- `make clean` - Remove temporary files
+- `make view-log` - View server logs
 
-### 起動
+### Launching the Application
 
-DMGからインストールした場合：
-1. LaunchpadからKotoTypeを起動
-2. または `open /Applications/KotoType.app`
+If installed from DMG:
+1. Launch KotoType from Launchpad
+2. Or run: `open /Applications/KotoType.app`
 
-ソースからビルドした場合：
+If built from source:
 ```bash
-# Makefileを使用（推奨）
+# Using Makefile (recommended)
 make run-app
 
-# または直接実行
+# Or run directly
 cd KotoType
 swift run
 ```
 
-### 初期設定
+### First-Time Setup
 
-初回起動時に「初期セットアップ」画面が表示され、以下の確認が実行されます。
+On first launch, the "Initial Setup" screen will appear to verify the following:
 
-1. **アクセシビリティ権限**（キーボード入力シミュレーション）
-2. **マイク権限**（録音機能）
-3. **FFmpegコマンドの存在**
+1. **Accessibility Permissions** (for keyboard input simulation)
+2. **Microphone Permissions** (for recording)
+3. **FFmpeg Command Availability**
 
-不足がある場合は画面の案内に従って設定し、「再チェック」後に利用開始できます。
+Follow the on-screen instructions to grant permissions and install dependencies, then click "Re-check" to continue.
 
-> 注意: ライセンス上の配慮により、配布物には FFmpeg を同梱しません。  
-> ユーザー環境で `ffmpeg` が必要です（例: `brew install ffmpeg`）。
+> **Note**: Due to licensing considerations, FFmpeg is not bundled with the distribution.  
+> You must have `ffmpeg` installed on your system (e.g., `brew install ffmpeg`).
 >
-> 一般ユーザー向けの`.app`/`.dmg`は`whisper_server`を同梱するため、Python や uv の事前インストールは不要です。
-> 開発時のみ、同梱バイナリがない場合に `uv run` / `.venv` 実行へフォールバックします。
+> The distributed `.app`/`.dmg` includes the `whisper_server` binary, so Python and uv are not required for end users.
+> During development only, if the bundled binary is not found, it falls back to `uv run`/`.venv` execution.
 
-### 操作
+### Basic Operation
 
-1. アプリを起動すると、メニューバーに「KotoType」が表示されます
-2. **Ctrl+Option+Space**を押すと録音が開始されます
-3. もう一度**Ctrl+Option+Space**を押すと録音が停止します
-4. 録音が完了すると、自動的に文字起こしが行われ、カーソル位置にテキストが入力されます
-5. メニューの「Import Audio File...」で`wav`/`mp3`を取り込んで文字起こしできます
-6. メニューの「History...」から過去の文字起こし結果を参照できます
-7. 「Settings... > 一般」で「ログイン時に自動起動する」を切り替えられます
-8. メニューの「Quit」または**Cmd+Q**で終了します
+1. Launch the app - the KotoType icon appears in the menu bar
+2. Press **Ctrl+Option+Space** to start recording
+3. Press **Ctrl+Option+Space** again to stop recording
+4. Transcription starts automatically, and the text is typed at your cursor position
+5. Select "Import Audio File..." from the menu to transcribe `wav`/`mp3` files
+6. Select "History..." to view past transcriptions
+7. Enable "Launch at login" in "Settings... > General"
+8. Select "Quit" or press **Cmd+Q** to exit
 
-## セキュリティ警告について
+## Security Warning
 
-このアプリは無料のアドホック署名で配布されているため、初回起動時にGatekeeperの警告が表示されます。
+This app is distributed with a free ad-hoc signature, so you may see a Gatekeeper warning on first launch.
 
-### 警告が表示された場合
+### If You See a Warning
 
-**方法1: ダブルクリックで「開く」**
-1. 右クリックまたはCtrl+クリック
-2. 「開く」を選択
+**Method 1: Right-click and "Open"**
+1. Right-click or Ctrl+click on the app
+2. Select "Open"
 
-**方法2: システム環境設定で許可**
-1. システム環境設定 > セキュリティとプライバシー
-2. 「開く」をクリック
+**Method 2: Allow in System Preferences**
+1. Go to System Preferences > Security & Privacy
+2. Click "Open"
 
-これはAppleの署名がないための正常な動作です。以降は警告なしで起動できます。
+This is normal behavior for apps without Apple Developer Program signing. After this, the app will launch without warnings.
 
-## プロジェクト構成
+## Project Structure
 
 ```
 koto-type/
 ├── python/
-│   └── whisper_server.py       # Whisperサーバー
+│   └── whisper_server.py       # Whisper server
 ├── tests/
-│   └── python/                 # Pythonテスト
+│   └── python/                 # Python tests
 │       ├── test_transcription.py
 │       └── test_benchmark.py
-├── KotoType/                     # Swiftアプリ
+├── KotoType/                     # Swift app
 │   ├── Sources/KotoType/
-│   │   ├── App/               # エントリポイントとパス解決
-│   │   ├── Audio/             # 録音
-│   │   ├── Input/             # ホットキー/入力
-│   │   ├── Transcription/     # Pythonプロセス通信・バッチ制御
-│   │   ├── UI/                # メニューバー/設定UI
-│   │   └── Support/           # ロガー・設定・権限
+│   │   ├── App/               # Entry point and path resolution
+│   │   ├── Audio/             # Recording
+│   │   ├── Input/             # Hotkey/input handling
+│   │   ├── Transcription/     # Python process communication & batch control
+│   │   ├── UI/                # Menu bar/settings UI
+│   │   └── Support/           # Logger/settings/permissions
 │   ├── Package.swift
 │   └── scripts/
-│       ├── create_app.sh        # アプリ作成スクリプト
-│       └── create_dmg.sh       # DMG作成スクリプト
-├── pyproject.toml            # Python依存
+│       ├── create_app.sh        # App creation script
+│       └── create_dmg.sh       # DMG creation script
+├── pyproject.toml            # Python dependencies
 ├── LICENSE                    # MIT License
-└── README.md                  # このファイル
+└── README.md                  # This file
 ```
 
-## テスト
+## Testing
 
-### Makefileを使用したテスト（推奨）
+### Using Makefile (Recommended)
 
 ```bash
-# 音声文字起こしテスト
+# Transcription tests
 make test-transcription
 
-# 速度ベンチマークテスト
+# Performance benchmark tests
 make test-benchmark
 
-# すべてのテストを実行
+# Run all tests
 make test-all
 ```
 
-### 手動でのテスト
+### Manual Testing
 
 ```bash
-# 音声文字起こしテスト
+# Transcription tests
 uv run python3 tests/python/test_transcription.py
 
-# 速度ベンチマークテスト
+# Performance benchmark tests
 uv run python3 tests/python/test_benchmark.py
 ```
 
-### サーバーログの確認
+### Viewing Server Logs
 
 ```bash
-# Makefileを使用
+# Using Makefile
 make view-log
 
-# または直接実行
+# Or directly
 tail -100 ~/Library/Application\ Support/koto-type/server.log
 ```
 
-### ノイズ除去の切り替え
+### Noise Reduction Toggle
 
-デフォルトでは音声前処理でノイズ除去を有効化しています。互換性の都合で無効化したい場合は、以下の環境変数を設定してください。
+Noise reduction is enabled by default in audio preprocessing. To disable it for compatibility reasons:
 
 ```bash
 export KOTOTYPE_ENABLE_NOISE_REDUCTION=0
 ```
 
-### 小さい声の自動増幅（Auto Gain）
+### Auto Gain for Quiet Speech
 
-デフォルトで有効です。入力が小さいときは前処理後に自動で音量を持ち上げてから文字起こしします。
+Enabled by default. Automatically amplifies quiet audio before transcription.
 
 ```bash
 export KOTOTYPE_AUTO_GAIN_ENABLED=1
 ```
 
-必要に応じて閾値や増幅量の上限を調整できます。
+Adjust threshold and amplification limits as needed:
 
 ```bash
 export KOTOTYPE_AUTO_GAIN_WEAK_THRESHOLD_DBFS=-18
@@ -245,140 +258,213 @@ export KOTOTYPE_AUTO_GAIN_TARGET_PEAK_DBFS=-10
 export KOTOTYPE_AUTO_GAIN_MAX_DB=18
 ```
 
-### 雑音環境向けVAD強度の切り替え
+### VAD Intensity for Noisy Environments
 
-デフォルトでは雑音環境向けにVADをやや厳しめに設定しています。従来に近い設定に戻したい場合は以下を設定してください。
+By default, VAD is set slightly stricter for noisy environments. To revert to traditional settings:
 
 ```bash
 export KOTOTYPE_VAD_STRICT=0
 ```
 
-### 型検査とリンティング
+### Type Checking and Linting
 
 ```bash
-# 型検査（ty）
+# Type checking (ty)
 .venv/bin/ty check python/
 
-# リンティング（ruff）
+# Linting (ruff)
 .venv/bin/ruff check python tests/python
 
-# フォーマット
+# Formatting
 .venv/bin/ruff format python tests/python
 ```
 
-## 開発
+## Development
 
-### ビルド
+### Building
 
 ```bash
-# Makefileを使用（推奨）
-make build-all    # Python + Swiftの両方をビルド
-make build-server # Pythonサーバーバイナリのみ
-make build-app    # Swiftアプリのみ
+# Using Makefile (recommended)
+make build-all    # Build both Python and Swift
+make build-server # Build Python server binary only
+make build-app    # Build Swift app only
 
-# または直接実行
+# Or run directly
 cd KotoType
 swift build
 ```
 
-### 実行
+### Running
 
 ```bash
-# Makefileを使用（推奨）
+# Using Makefile (recommended)
 make run-app
 
-# または直接実行
+# Or run directly
 cd KotoType
 swift run
 ```
 
-### 依存関係のインストール
+### Installing Dependencies
 
 ```bash
-# Makefileを使用（推奨）
+# Using Makefile (recommended)
 make install-deps
 
-# または直接実行
-uv sync
+# Or run directly
+uv sync --extra dev
 ```
 
-### クリーンアップ
+### Cleanup
 
 ```bash
-# Makefileを使用
+# Using Makefile
 make clean
 ```
 
-### 配布用ビルド
+### Distribution Build
 
 ```bash
-# 完全なビルド手順
-make install-deps  # 依存関係のインストール
-make build-all     # Python + Swiftのビルド
+# Complete build process
+make install-deps  # Install dependencies
+make build-all     # Build Python + Swift
 cd KotoType
-./scripts/create_app.sh    # .appバンドルの作成
-./scripts/create_dmg.sh    # .dmgディスクイメージの作成（オプション）
+./scripts/create_app.sh    # Create .app bundle
+./scripts/create_dmg.sh    # Create .dmg disk image (optional)
 ```
 
-## リリース運用
+## Release Process
 
-- `main` ブランチへ push すると、GitHub Actions が自動で `v<VERSION>.<run_number>` 形式のタグを作成
-- タグ push を契機に `.github/workflows/release.yml` が実行され、`.dmg` をビルド
-- 生成された `.dmg` は該当タグの GitHub Release に自動添付
-- リリースDMGには FFmpeg を同梱しないため、初回セットアップで環境側 `ffmpeg` を必須チェック
+- Pushing to `main` branch triggers GitHub Actions to create a tag in format `v<VERSION>.<run_number>`
+- Tag push triggers `.github/workflows/release.yml` to build `.dmg`
+- Generated `.dmg` is automatically attached to the GitHub Release
+- Release DMG does not include FFmpeg, so the initial setup requires system `ffmpeg`
 
-`VERSION` ファイルを更新すると次回以降のタグ・配布物バージョンに反映されます。
+Update the `VERSION` file to reflect in future tags and distribution versions.
 
-### PyInstallerについて
+### About PyInstaller
 
-PythonサーバーはPyInstallerを使用して単一の実行ファイルにパッケージ化されます：
+The Python server is packaged as a single executable using PyInstaller:
 
-- **実行コマンド**: `uv run pyinstaller --onefile --name whisper_server ...`
-- **出力先**: `dist/whisper_server`
-- **組み込み場所**: `.app/Contents/Resources/whisper_server`
-- **C拡張モジュール**: faster-whisper, ctranslate2 が自動的に収集されます
+- **Command**: `uv run --extra dev pyinstaller --onefile --name whisper_server ...`
+- **Output**: `dist/whisper_server`
+- **Embedded at**: `.app/Contents/Resources/whisper_server`
+- **C Extensions**: faster-whisper and ctranslate2 are automatically collected
 
-## トラブルシューティング
+## Troubleshooting
 
-### マイクの権限
-初回起動時にマイクへのアクセス権限を許可する必要があります。
+### Microphone Permissions
+Allow microphone access on first launch when prompted.
 
-### Whisperモデルのダウンロード
-初回起動時にWhisperモデル（large-v3、約3GB）がダウンロードされます。
+### Whisper Model Download
+The Whisper model (large-v3, ~3GB) is downloaded on first launch.
 
-### ホットキーが動作しない
-システム環境設定 > セキュリティとプライバシー > アクセシビリティ でKotoTypeを許可してください。
+### Hotkey Not Working
+Enable KotoType in System Preferences > Security & Privacy > Accessibility.
 
-### Pythonサーバーバイナリが見つからない
-配布用`.app`/`.dmg`を作る場合は、`make build-server` で `dist/whisper_server` を作成してから `./scripts/create_app.sh` を実行してください。
+### Python Server Binary Not Found
+When creating distribution `.app`/`.dmg`, run `make build-server` to create `dist/whisper_server` before running `./scripts/create_app.sh`.
 
-### PyInstallerのエラー
-開発依存が正しくインストールされているか確認してください：
+### PyInstaller Errors
+Ensure dev dependencies are properly installed:
 ```bash
 make install-deps
 ```
 
-## リリース
+## Releases
 
-リリースバイナリは[Releases](https://github.com/yourusername/koto-type/releases)からダウンロードできます。
+Release binaries are available on the [Releases page](https://github.com/yourusername/koto-type/releases).
 
-## ライセンス
+## Contributing
 
-[MIT License](LICENSE)
+We welcome contributions from the community! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute.
 
-## 貢献
+### Quick Start for Contributors
 
-プルリクエストを歓迎します。
+```bash
+# Fork and clone the repository
+git clone https://github.com/YOUR_USERNAME/koto-type.git
+cd koto-type
 
-## 制限事項
+# Install dependencies
+make install-deps
 
-- **マイクの権限**: システム設定で許可が必要
-- **アクセシビリティ権限**: ホットキーとキーボードシミュレーションに必要
-- **Whisperモデル**: 初回起動時に約3GBダウンロード
+# Run tests
+make test-all
+
+# Start development
+make run-app
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed information on:
+
+- Development environment setup
+- Code style guidelines
+- Testing requirements
+- Pull request process
+- Reporting bugs and feature requests
+
+## License
+
+[MIT License](LICENSE) © 2025 KotoType Contributors
+
+## Documentation
+
+- **[CHANGELOG.md](CHANGELOG.md)**: Version history and release notes
+- **[DESIGN.md](DESIGN.md)**: Technical design documentation
+- **[SECURITY.md](SECURITY.md)**: Security policy and reporting
+- **[SUPPORT.md](SUPPORT.md)**: Getting help and troubleshooting
+
+## Acknowledgments
+
+- [OpenAI Whisper](https://github.com/openai/whisper) for the speech recognition model
+- [faster-whisper](https://github.com/SYSTRAN/faster-whisper) for the optimized Whisper implementation
+- The open-source community for various tools and libraries
+
+---
+
+<div align="center">
+
+Made with ❤️ by [KotoType Contributors](CONTRIBUTORS.md)
+
+[⬆ Back to top](#kototype)
+
+</div>
+
+## Limitations
+
+- **Microphone Permission**: Must be granted in System Preferences
+- **Accessibility Permission**: Required for hotkeys and keyboard simulation
+- **Whisper Model**: ~3GB download on first launch
 
 ## Roadmap
 
-- [ ] 複数言語のサポート
-- [ ] キーボードショートカットのカスタマイズ
-- [ ] 自動更新機能
-- [ ] 設定UIの実装
+- [ ] Multi-language support
+- [ ] Customizable keyboard shortcuts
+- [ ] Auto-update functionality
+- [ ] Enhanced settings UI
+
+## Documentation
+
+- **[CHANGELOG.md](CHANGELOG.md)**: Version history and release notes
+- **[CONTRIBUTING.md](CONTRIBUTING.md)**: Guidelines for contributors
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)**: Community code of conduct
+- **[DESIGN.md](DESIGN.md)**: Technical design documentation
+- **[SECURITY.md](SECURITY.md)**: Security policy and reporting
+- **[SUPPORT.md](SUPPORT.md)**: Getting help and troubleshooting
+
+## Acknowledgments
+
+- [OpenAI Whisper](https://github.com/openai/whisper) for the speech recognition model
+- [faster-whisper](https://github.com/SYSTRAN/faster-whisper) for the optimized Whisper implementation
+- The open-source community for various tools and libraries
+
+---
+
+<div align="center">
+
+Made with ❤️ by [KotoType Contributors](CONTRIBUTORS.md)
+
+[⬆ Back to top](#kototype)
+
+</div>

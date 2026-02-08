@@ -50,7 +50,7 @@ jobs:
         run: |
           uv venv
           source .venv/bin/activate
-          uv sync
+          uv sync --extra dev
       
       - name: Test Python
         run: |

@@ -56,7 +56,7 @@ test-all: test-transcription test-benchmark test-user-dictionary
 
 build-server:
 	@echo "Pythonサーバーバイナリをビルド中..."
-	uv run pyinstaller --onefile --name whisper_server \
+	uv run --extra dev pyinstaller --onefile --name whisper_server \
 	  --hidden-import=ctranslate2 \
 	  --hidden-import=faster_whisper \
 	  $(SERVER_SCRIPT)
@@ -70,7 +70,7 @@ build-all: build-server build-app
 
 install-deps:
 	@echo "Python依存関係をインストール中..."
-	uv sync
+	uv sync --extra dev
 
 clean:
 	@echo "一時ファイルを削除中..."
