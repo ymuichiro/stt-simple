@@ -763,8 +763,6 @@ def main():
                 log(f"Error checking processed file: {str(e)}, using original")
                 transcription_audio_path = audio_path
 
-            import time
-
             user_words = load_user_dictionary(log=log)
             initial_prompt = generate_initial_prompt(
                 actual_language or language or "ja",
