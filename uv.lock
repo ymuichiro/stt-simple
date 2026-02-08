@@ -608,7 +608,7 @@ wheels = [
 ]
 
 [[package]]
-name = "stt-simple"
+name = "koto-type"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

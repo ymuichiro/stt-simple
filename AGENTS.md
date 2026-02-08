@@ -1,4 +1,4 @@
-# STT Simple - エージェント全体方針
+# KotoType - エージェント全体方針
 
 ## 概要
 
@@ -111,14 +111,14 @@ uv sync
 ## プロジェクト構成
 
 ```
-stt-simple/
+koto-type/
 ├── .cline/
 │   └── skills/
 │       ├── uv-add/              # Pythonパッケージ管理
 │       ├── swift-dev/           # Swift開発 (推奨)
 │       └── whisper-transcribe/  # Whisper実装 (推奨)
-├── STTApp/                     # Swift アプリ
-│   ├── Sources/STTApp/
+├── KotoType/                     # Swift アプリ
+│   ├── Sources/KotoType/
 │   │   ├── App/
 │   │   ├── Audio/
 │   │   ├── Input/
@@ -253,7 +253,7 @@ make build-app
 make build-all
 
 # 4. .appバンドルの作成
-cd STTApp
+cd KotoType
 ./scripts/create_app.sh
 
 # 5. .dmgディスクイメージの作成（オプション）
@@ -271,12 +271,12 @@ PythonスクリプトはPyInstallerを使用して単一の実行ファイルに
 
 ### 配布形式
 
-#### .appバンドル (STTApp.app)
+#### .appバンドル (KotoType.app)
 - macOSアプリケーションの標準形式
 - Applicationsフォルダにドラッグ＆ドロップして使用
 - 単独で配布可能
 
-#### .dmgディスクイメージ (STTApp-1.0.0.dmg)
+#### .dmgディスクイメージ (KotoType-1.0.0.dmg)
 - macOSアプリの一般的な配布形式
 - ダブルクリックでマウント
 - アプリとApplicationsフォルダへのリンクを含む
@@ -293,6 +293,6 @@ PythonスクリプトはPyInstallerを使用して単一の実行ファイルに
 
 1. 必要なスキルを作成する（swift-dev, whisper-transcribeなど）
 2. Pythonバックエンド（python/whisper_server.py）を実装
-3. Swiftフロントエンド（STTApp）を実装
+3. Swiftフロントエンド（KotoType）を実装
 4. 統合テストを実施
 5. ユーザードキュメント（README.md）を作成

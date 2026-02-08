@@ -1,14 +1,14 @@
-# Contributing to STT Simple
+# Contributing to KotoType
 
-Thank you for your interest in contributing to STT Simple!
+Thank you for your interest in contributing to KotoType!
 
 ## 開発環境の設定
 
 ### 1. リポジトリをクローン
 
 ```bash
-git clone https://github.com/yourusername/stt-simple.git
-cd stt-simple
+git clone https://github.com/yourusername/koto-type.git
+cd koto-type
 ```
 
 ### 2. Python環境の設定
@@ -28,7 +28,7 @@ uv sync
 ### 3. Swiftアプリのビルド
 
 ```bash
-cd STTApp
+cd KotoType
 swift build
 ```
 
@@ -55,21 +55,21 @@ source .venv/bin/activate
 ### Swiftアプリの実行
 
 ```bash
-cd STTApp
+cd KotoType
 swift run
 ```
 
 ### アプリバンドルの作成
 
 ```bash
-cd STTApp
+cd KotoType
 ./scripts/create_app.sh
 ```
 
 ### DMGの作成
 
 ```bash
-cd STTApp
+cd KotoType
 ./scripts/create_dmg.sh
 ```
 
@@ -108,7 +108,7 @@ cd STTApp
 バグを見つけた場合は、Issueを作成してください。以下の情報を含めてください：
 
 - macOSのバージョン
-- STT Simpleのバージョン
+- KotoTypeのバージョン
 - 再現手順
 - 期待される動作
 - 実際の動作

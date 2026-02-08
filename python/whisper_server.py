@@ -11,11 +11,11 @@ import wave
 
 
 def default_dictionary_path():
-    return os.path.expanduser("~/Library/Application Support/stt-simple/user_dictionary.json")
+    return os.path.expanduser("~/Library/Application Support/koto-type/user_dictionary.json")
 
 
 def setup_logging():
-    log_dir = os.path.expanduser("~/Library/Application Support/stt-simple")
+    log_dir = os.path.expanduser("~/Library/Application Support/koto-type")
     os.makedirs(log_dir, exist_ok=True)
 
     log_file = os.path.join(log_dir, "server.log")
@@ -150,7 +150,7 @@ def determine_gain_for_weak_audio(
 
 
 def build_vad_parameters(vad_threshold):
-    strict_mode = parse_bool(os.environ.get("STT_VAD_STRICT", "1"), default=True)
+    strict_mode = parse_bool(os.environ.get("KOTOTYPE_VAD_STRICT", "1"), default=True)
     threshold_delta = 0.07 if strict_mode else 0.0
     effective_threshold = max(0.0, min(1.0, vad_threshold + threshold_delta))
 
@@ -198,27 +198,27 @@ def audio_preprocess(
         output_path = f"{base}_processed.wav"
         boosted_output_path = f"{base}_processed_gain.wav"
         enable_noise_reduction = parse_bool(
-            os.environ.get("STT_ENABLE_NOISE_REDUCTION", "1"),
+            os.environ.get("KOTOTYPE_ENABLE_NOISE_REDUCTION", "1"),
             default=True,
         )
         if auto_gain_enabled is None:
             auto_gain_enabled = parse_bool(
-                os.environ.get("STT_AUTO_GAIN_ENABLED", "1"),
+                os.environ.get("KOTOTYPE_AUTO_GAIN_ENABLED", "1"),
                 default=True,
             )
         if auto_gain_weak_threshold_dbfs is None:
             auto_gain_weak_threshold_dbfs = parse_float(
-                os.environ.get("STT_AUTO_GAIN_WEAK_THRESHOLD_DBFS"),
+                os.environ.get("KOTOTYPE_AUTO_GAIN_WEAK_THRESHOLD_DBFS"),
                 default=-18.0,
             )
         if auto_gain_target_peak_dbfs is None:
             auto_gain_target_peak_dbfs = parse_float(
-                os.environ.get("STT_AUTO_GAIN_TARGET_PEAK_DBFS"),
+                os.environ.get("KOTOTYPE_AUTO_GAIN_TARGET_PEAK_DBFS"),
                 default=-10.0,
             )
         if auto_gain_max_db is None:
             auto_gain_max_db = parse_float(
-                os.environ.get("STT_AUTO_GAIN_MAX_DB"),
+                os.environ.get("KOTOTYPE_AUTO_GAIN_MAX_DB"),
                 default=18.0,
             )
 

@@ -46,10 +46,10 @@ class AudioPreprocessTests(unittest.TestCase):
             def capture_log(message):
                 logs.append(message)
 
-            original_env = os.environ.get("STT_ENABLE_NOISE_REDUCTION")
-            original_auto_gain_env = os.environ.get("STT_AUTO_GAIN_ENABLED")
-            os.environ["STT_ENABLE_NOISE_REDUCTION"] = "1"
-            os.environ["STT_AUTO_GAIN_ENABLED"] = "0"
+            original_env = os.environ.get("KOTOTYPE_ENABLE_NOISE_REDUCTION")
+            original_auto_gain_env = os.environ.get("KOTOTYPE_AUTO_GAIN_ENABLED")
+            os.environ["KOTOTYPE_ENABLE_NOISE_REDUCTION"] = "1"
+            os.environ["KOTOTYPE_AUTO_GAIN_ENABLED"] = "0"
             try:
                 output_path = whisper_server.audio_preprocess(
                     str(input_path),
@@ -59,13 +59,13 @@ class AudioPreprocessTests(unittest.TestCase):
                 )
             finally:
                 if original_env is None:
-                    os.environ.pop("STT_ENABLE_NOISE_REDUCTION", None)
+                    os.environ.pop("KOTOTYPE_ENABLE_NOISE_REDUCTION", None)
                 else:
-                    os.environ["STT_ENABLE_NOISE_REDUCTION"] = original_env
+                    os.environ["KOTOTYPE_ENABLE_NOISE_REDUCTION"] = original_env
                 if original_auto_gain_env is None:
-                    os.environ.pop("STT_AUTO_GAIN_ENABLED", None)
+                    os.environ.pop("KOTOTYPE_AUTO_GAIN_ENABLED", None)
                 else:
-                    os.environ["STT_AUTO_GAIN_ENABLED"] = original_auto_gain_env
+                    os.environ["KOTOTYPE_AUTO_GAIN_ENABLED"] = original_auto_gain_env
 
             self.assertTrue(output_path.endswith("_processed.wav"))
             self.assertEqual(fake_ffmpeg.run_call_count, 3)
@@ -92,10 +92,10 @@ class AudioPreprocessTests(unittest.TestCase):
             def capture_log(message):
                 logs.append(message)
 
-            original_noise_env = os.environ.get("STT_ENABLE_NOISE_REDUCTION")
-            original_auto_gain_env = os.environ.get("STT_AUTO_GAIN_ENABLED")
-            os.environ["STT_ENABLE_NOISE_REDUCTION"] = "0"
-            os.environ["STT_AUTO_GAIN_ENABLED"] = "1"
+            original_noise_env = os.environ.get("KOTOTYPE_ENABLE_NOISE_REDUCTION")
+            original_auto_gain_env = os.environ.get("KOTOTYPE_AUTO_GAIN_ENABLED")
+            os.environ["KOTOTYPE_ENABLE_NOISE_REDUCTION"] = "0"
+            os.environ["KOTOTYPE_AUTO_GAIN_ENABLED"] = "1"
             try:
                 whisper_server.audio_preprocess(
                     str(input_path),
@@ -105,13 +105,13 @@ class AudioPreprocessTests(unittest.TestCase):
                 )
             finally:
                 if original_noise_env is None:
-                    os.environ.pop("STT_ENABLE_NOISE_REDUCTION", None)
+                    os.environ.pop("KOTOTYPE_ENABLE_NOISE_REDUCTION", None)
                 else:
-                    os.environ["STT_ENABLE_NOISE_REDUCTION"] = original_noise_env
+                    os.environ["KOTOTYPE_ENABLE_NOISE_REDUCTION"] = original_noise_env
                 if original_auto_gain_env is None:
-                    os.environ.pop("STT_AUTO_GAIN_ENABLED", None)
+                    os.environ.pop("KOTOTYPE_AUTO_GAIN_ENABLED", None)
                 else:
-                    os.environ["STT_AUTO_GAIN_ENABLED"] = original_auto_gain_env
+                    os.environ["KOTOTYPE_AUTO_GAIN_ENABLED"] = original_auto_gain_env
 
             self.assertEqual(fake_ffmpeg.run_call_count, 2)
             self.assertIn("volume=", fake_ffmpeg.filter_history[1])
@@ -127,8 +127,8 @@ class AudioPreprocessTests(unittest.TestCase):
             input_path = Path(temp_dir) / "input.wav"
             input_path.write_bytes(b"dummy")
 
-            original_auto_gain_env = os.environ.get("STT_AUTO_GAIN_ENABLED")
-            os.environ["STT_AUTO_GAIN_ENABLED"] = "0"
+            original_auto_gain_env = os.environ.get("KOTOTYPE_AUTO_GAIN_ENABLED")
+            os.environ["KOTOTYPE_AUTO_GAIN_ENABLED"] = "0"
             try:
                 whisper_server.audio_preprocess(
                     str(input_path),
@@ -142,9 +142,9 @@ class AudioPreprocessTests(unittest.TestCase):
                 )
             finally:
                 if original_auto_gain_env is None:
-                    os.environ.pop("STT_AUTO_GAIN_ENABLED", None)
+                    os.environ.pop("KOTOTYPE_AUTO_GAIN_ENABLED", None)
                 else:
-                    os.environ["STT_AUTO_GAIN_ENABLED"] = original_auto_gain_env
+                    os.environ["KOTOTYPE_AUTO_GAIN_ENABLED"] = original_auto_gain_env
 
             self.assertEqual(fake_ffmpeg.run_call_count, 2)
             self.assertIn("volume=9.00dB", fake_ffmpeg.filter_history[1])
@@ -167,13 +167,13 @@ class AudioPreprocessTests(unittest.TestCase):
         self.assertEqual(no_gain, 0.0)
 
     def test_build_vad_parameters_strict_mode_default(self):
-        original_env = os.environ.get("STT_VAD_STRICT")
-        os.environ.pop("STT_VAD_STRICT", None)
+        original_env = os.environ.get("KOTOTYPE_VAD_STRICT")
+        os.environ.pop("KOTOTYPE_VAD_STRICT", None)
         try:
             params = whisper_server.build_vad_parameters(0.5)
         finally:
             if original_env is not None:
-                os.environ["STT_VAD_STRICT"] = original_env
+                os.environ["KOTOTYPE_VAD_STRICT"] = original_env
 
         self.assertAlmostEqual(params["threshold"], 0.57, places=2)
         self.assertEqual(params["min_speech_duration_ms"], 320)
@@ -181,15 +181,15 @@ class AudioPreprocessTests(unittest.TestCase):
         self.assertEqual(params["speech_pad_ms"], 80)
 
     def test_build_vad_parameters_non_strict_mode(self):
-        original_env = os.environ.get("STT_VAD_STRICT")
-        os.environ["STT_VAD_STRICT"] = "0"
+        original_env = os.environ.get("KOTOTYPE_VAD_STRICT")
+        os.environ["KOTOTYPE_VAD_STRICT"] = "0"
         try:
             params = whisper_server.build_vad_parameters(0.5)
         finally:
             if original_env is None:
-                os.environ.pop("STT_VAD_STRICT", None)
+                os.environ.pop("KOTOTYPE_VAD_STRICT", None)
             else:
-                os.environ["STT_VAD_STRICT"] = original_env
+                os.environ["KOTOTYPE_VAD_STRICT"] = original_env
 
         self.assertAlmostEqual(params["threshold"], 0.5, places=2)
         self.assertEqual(params["min_speech_duration_ms"], 250)

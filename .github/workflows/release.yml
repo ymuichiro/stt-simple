@@ -28,7 +28,7 @@ jobs:
             exit 1
           fi
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
-          echo "STT_VERSION=${TAG#v}" >> "${GITHUB_ENV}"
+          echo "KOTOTYPE_VERSION=${TAG#v}" >> "${GITHUB_ENV}"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,24 +61,28 @@ jobs:
       
       - name: Build Swift App
         run: |
-          cd STTApp
+          cd KotoType
           swift build -c release
+
+      - name: Build Python Server Binary
+        run: |
+          make build-server
       
       - name: Create App Bundle
         run: |
-          cd STTApp
-          export STT_BUILD_CONFIG=release
+          cd KotoType
+          export KOTOTYPE_BUILD_CONFIG=release
           ./scripts/create_app.sh
       
       - name: Create DMG
         run: |
-          cd STTApp
+          cd KotoType
           ./scripts/create_dmg.sh
 
       - name: Verify DMG output
         run: |
           shopt -s nullglob
-          files=(STTApp/*.dmg)
+          files=(KotoType/*.dmg)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No DMG files were generated."
             exit 1
@@ -88,14 +92,14 @@ jobs:
       - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
-          name: STTApp-dmg-${{ steps.release_tag.outputs.tag }}
-          path: STTApp/*.dmg
+          name: KotoType-dmg-${{ steps.release_tag.outputs.tag }}
+          path: KotoType/*.dmg
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.release_tag.outputs.tag }}
-          files: STTApp/*.dmg
+          files: KotoType/*.dmg
           draft: false
           prerelease: false
           generate_release_notes: true

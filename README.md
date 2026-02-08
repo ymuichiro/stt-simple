@@ -1,4 +1,4 @@
-# STT Simple
+# KotoType
 
 Macネイティブの音声文字起こしアプリケーション。
 
@@ -17,16 +17,16 @@ Macネイティブの音声文字起こしアプリケーション。
 - 過去の文字起こし結果を履歴で参照
 - UIから`wav`/`mp3`音声ファイルを取り込み文字起こし
 - ログイン時の自動起動 ON/OFF
-- 初回起動時のセットアップ画面（権限・依存関係チェック）
+- 初回起動時のセットアップ画面（権限・FFmpegチェック）
 - 完全オープンソース（MIT License）
 
 ## インストール
 
 ### DMGからインストール（推奨）
 
-1. [最新リリース](https://github.com/yourusername/stt-simple/releases/latest)からSTTApp.dmgをダウンロード
+1. [最新リリース](https://github.com/yourusername/koto-type/releases/latest)からKotoType.dmgをダウンロード
 2. ダウンロードしたDMGをダブルクリック
-3. STTApp.appをApplicationsフォルダにドラッグ
+3. KotoType.appをApplicationsフォルダにドラッグ
 4. 初回起動時のセキュリティ警告で「開く」をクリック
 
 ### ソースからビルド
@@ -42,8 +42,8 @@ Macネイティブの音声文字起こしアプリケーション。
 
 1. レポジトリをクローン
 ```bash
-git clone https://github.com/yourusername/stt-simple.git
-cd stt-simple
+git clone https://github.com/yourusername/koto-type.git
+cd koto-type
 ```
 
 2. 依存関係のインストール（開発依存含む）
@@ -58,7 +58,7 @@ make build-all
 
 4. .appバンドルの作成
 ```bash
-cd STTApp
+cd KotoType
 ./scripts/create_app.sh
 ```
 
@@ -103,8 +103,8 @@ make help
 ### 起動
 
 DMGからインストールした場合：
-1. LaunchpadからSTTAppを起動
-2. または `open /Applications/STTApp.app`
+1. LaunchpadからKotoTypeを起動
+2. または `open /Applications/KotoType.app`
 
 ソースからビルドした場合：
 ```bash
@@ -112,7 +112,7 @@ DMGからインストールした場合：
 make run-app
 
 # または直接実行
-cd STTApp
+cd KotoType
 swift run
 ```
 
@@ -122,18 +122,19 @@ swift run
 
 1. **アクセシビリティ権限**（キーボード入力シミュレーション）
 2. **マイク権限**（録音機能）
-3. **バックエンド配置**（同梱`whisper_server`または開発用`.venv`）
-4. **FFmpegコマンドの存在**
-5. **Python依存関係**（`faster-whisper`, `ffmpeg-python`）
+3. **FFmpegコマンドの存在**
 
 不足がある場合は画面の案内に従って設定し、「再チェック」後に利用開始できます。
 
 > 注意: ライセンス上の配慮により、配布物には FFmpeg を同梱しません。  
 > ユーザー環境で `ffmpeg` が必要です（例: `brew install ffmpeg`）。
+>
+> 一般ユーザー向けの`.app`/`.dmg`は`whisper_server`を同梱するため、Python や uv の事前インストールは不要です。
+> 開発時のみ、同梱バイナリがない場合に `uv run` / `.venv` 実行へフォールバックします。
 
 ### 操作
 
-1. アプリを起動すると、メニューバーに「STT」が表示されます
+1. アプリを起動すると、メニューバーに「KotoType」が表示されます
 2. **Ctrl+Option+Space**を押すと録音が開始されます
 3. もう一度**Ctrl+Option+Space**を押すと録音が停止します
 4. 録音が完了すると、自動的に文字起こしが行われ、カーソル位置にテキストが入力されます
@@ -161,15 +162,15 @@ swift run
 ## プロジェクト構成
 
 ```
-stt-simple/
+koto-type/
 ├── python/
 │   └── whisper_server.py       # Whisperサーバー
 ├── tests/
 │   └── python/                 # Pythonテスト
 │       ├── test_transcription.py
 │       └── test_benchmark.py
-├── STTApp/                     # Swiftアプリ
-│   ├── Sources/STTApp/
+├── KotoType/                     # Swiftアプリ
+│   ├── Sources/KotoType/
 │   │   ├── App/               # エントリポイントとパス解決
 │   │   ├── Audio/             # 録音
 │   │   ├── Input/             # ホットキー/入力
@@ -217,7 +218,7 @@ uv run python3 tests/python/test_benchmark.py
 make view-log
 
 # または直接実行
-tail -100 ~/Library/Application\ Support/stt-simple/server.log
+tail -100 ~/Library/Application\ Support/koto-type/server.log
 ```
 
 ### ノイズ除去の切り替え
@@ -225,7 +226,7 @@ tail -100 ~/Library/Application\ Support/stt-simple/server.log
 デフォルトでは音声前処理でノイズ除去を有効化しています。互換性の都合で無効化したい場合は、以下の環境変数を設定してください。
 
 ```bash
-export STT_ENABLE_NOISE_REDUCTION=0
+export KOTOTYPE_ENABLE_NOISE_REDUCTION=0
 ```
 
 ### 小さい声の自動増幅（Auto Gain）
@@ -233,15 +234,15 @@ export STT_ENABLE_NOISE_REDUCTION=0
 デフォルトで有効です。入力が小さいときは前処理後に自動で音量を持ち上げてから文字起こしします。
 
 ```bash
-export STT_AUTO_GAIN_ENABLED=1
+export KOTOTYPE_AUTO_GAIN_ENABLED=1
 ```
 
 必要に応じて閾値や増幅量の上限を調整できます。
 
 ```bash
-export STT_AUTO_GAIN_WEAK_THRESHOLD_DBFS=-18
-export STT_AUTO_GAIN_TARGET_PEAK_DBFS=-10
-export STT_AUTO_GAIN_MAX_DB=18
+export KOTOTYPE_AUTO_GAIN_WEAK_THRESHOLD_DBFS=-18
+export KOTOTYPE_AUTO_GAIN_TARGET_PEAK_DBFS=-10
+export KOTOTYPE_AUTO_GAIN_MAX_DB=18
 ```
 
 ### 雑音環境向けVAD強度の切り替え
@@ -249,7 +250,7 @@ export STT_AUTO_GAIN_MAX_DB=18
 デフォルトでは雑音環境向けにVADをやや厳しめに設定しています。従来に近い設定に戻したい場合は以下を設定してください。
 
 ```bash
-export STT_VAD_STRICT=0
+export KOTOTYPE_VAD_STRICT=0
 ```
 
 ### 型検査とリンティング
@@ -276,7 +277,7 @@ make build-server # Pythonサーバーバイナリのみ
 make build-app    # Swiftアプリのみ
 
 # または直接実行
-cd STTApp
+cd KotoType
 swift build
 ```
 
@@ -287,7 +288,7 @@ swift build
 make run-app
 
 # または直接実行
-cd STTApp
+cd KotoType
 swift run
 ```
 
@@ -314,7 +315,7 @@ make clean
 # 完全なビルド手順
 make install-deps  # 依存関係のインストール
 make build-all     # Python + Swiftのビルド
-cd STTApp
+cd KotoType
 ./scripts/create_app.sh    # .appバンドルの作成
 ./scripts/create_dmg.sh    # .dmgディスクイメージの作成（オプション）
 ```
@@ -346,10 +347,10 @@ PythonサーバーはPyInstallerを使用して単一の実行ファイルにパ
 初回起動時にWhisperモデル（large-v3、約3GB）がダウンロードされます。
 
 ### ホットキーが動作しない
-システム環境設定 > セキュリティとプライバシー > アクセシビリティ でSTTAppを許可してください。
+システム環境設定 > セキュリティとプライバシー > アクセシビリティ でKotoTypeを許可してください。
 
 ### Pythonサーバーバイナリが見つからない
-`make build-server` を実行してwhisper_serverバイナリを作成してください。
+配布用`.app`/`.dmg`を作る場合は、`make build-server` で `dist/whisper_server` を作成してから `./scripts/create_app.sh` を実行してください。
 
 ### PyInstallerのエラー
 開発依存が正しくインストールされているか確認してください：
@@ -359,7 +360,7 @@ make install-deps
 
 ## リリース
 
-リリースバイナリは[Releases](https://github.com/yourusername/stt-simple/releases)からダウンロードできます。
+リリースバイナリは[Releases](https://github.com/yourusername/koto-type/releases)からダウンロードできます。
 
 ## ライセンス
 

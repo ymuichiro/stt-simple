@@ -1,4 +1,4 @@
-# STT Simple - 設計方針
+# KotoType - 設計方針
 
 ## 概要
 
@@ -48,7 +48,7 @@ Macネイティブの音声文字起こしアプリケーション。OpenAI Whis
 - 音声ファイル（`wav` / `mp3`）取り込み文字起こし
 - 文字起こし履歴の保存・参照
 - ログイン時自動起動（ON/OFF）
-- 初回セットアップ（権限・依存関係チェック）
+- 初回セットアップ（権限・FFmpegチェック）
 
 ### 2. Python スクリプト
 
@@ -121,9 +121,10 @@ text = " ".join([segment.text for segment in segments])
    - 初期セットアップ画面で必須チェックを実行
      - アクセシビリティ権限
      - マイク権限
-     - バックエンド実行環境（同梱バイナリまたは開発用`.venv`）
      - `ffmpeg` コマンド
-     - Python依存（`faster-whisper`, `ffmpeg-python`）
+   - Pythonバックエンドは自動解決
+     - リリース版: 同梱 `whisper_server` を必須利用（ユーザー環境にPython/uvは不要）
+     - 開発版: `uv run` で依存関係を自動準備して起動
    - 条件を満たしたらメニューバー常駐モードへ移行
    - Pythonプロセスをバックグラウンドで起動
 
@@ -174,9 +175,9 @@ text = " ".join([segment.text for segment in segments])
 ## ディレクトリ構成
 
 ```
-stt-simple/
-├── STTApp/                    # Swift アプリ
-│   ├── Sources/STTApp/
+koto-type/
+├── KotoType/                    # Swift アプリ
+│   ├── Sources/KotoType/
 │   │   ├── App/
 │   │   ├── Audio/
 │   │   ├── Input/

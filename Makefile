@@ -8,7 +8,7 @@ SERVER_SCRIPT := python/whisper_server.py
 PYTHON_TEST_DIR := tests/python
 
 help:
-	@echo "STT Simple - 利用可能なコマンド:"
+	@echo "KotoType - 利用可能なコマンド:"
 	@echo ""
 	@echo "アプリケーション:"
 	@echo "  make run-app       - Swiftアプリケーションを起動"
@@ -32,7 +32,7 @@ help:
 
 run-app:
 	@echo "Swiftアプリケーションを起動中..."
-	cd STTApp && swift run
+	cd KotoType && swift run
 
 run-server:
 	@echo "Pythonサーバーを起動中..."
@@ -63,7 +63,7 @@ build-server:
 
 build-app:
 	@echo "Swiftアプリケーションをビルド中..."
-	cd STTApp && swift build
+	cd KotoType && swift build
 
 build-all: build-server build-app
 	@echo "✓ すべてのビルド完了"
@@ -80,4 +80,4 @@ clean:
 
 view-log:
 	@echo "サーバーログを表示:"
-	@cat ~/Library/Application\ Support/stt-simple/server.log
+	@cat ~/Library/Application\ Support/koto-type/server.log
