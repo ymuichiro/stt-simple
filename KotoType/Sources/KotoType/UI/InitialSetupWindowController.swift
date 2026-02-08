@@ -13,12 +13,13 @@ final class InitialSetupWindowController: NSWindowController {
         let hostingController = NSHostingController(rootView: content)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 700, height: 620),
-            styleMask: [.titled],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         window.center()
         window.title = "初期セットアップ"
+        window.minSize = NSSize(width: 700, height: 620)
         window.contentViewController = hostingController
         window.isReleasedWhenClosed = false
         self.init(window: window)
@@ -120,6 +121,7 @@ struct InitialSetupView: View {
             }
         }
         .padding(24)
+        .frame(minWidth: 700, minHeight: 620, alignment: .topLeading)
     }
 
     private func refreshChecks() {
