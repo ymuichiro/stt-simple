@@ -123,13 +123,7 @@ struct PermissionView: View {
     }
     
     private func restartApp() {
-        let url = URL(fileURLWithPath: Bundle.main.resourcePath!)
-        let path = url.deletingLastPathComponent().deletingLastPathComponent().path
-        let task = Process()
-        task.launchPath = "/usr/bin/open"
-        task.arguments = [path]
-        task.launch()
-
+        guard AppRelauncher.relaunchCurrentApp() else { return }
         NSApp.terminate(nil)
     }
 }

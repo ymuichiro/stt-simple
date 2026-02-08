@@ -32,6 +32,9 @@ struct InitialSetupView: View {
 
     @State private var report = InitialSetupReport(items: [])
     @State private var isRequestingMicrophone = false
+    @State private var isWaitingForAccessibilityUpdate = false
+    @State private var shouldShowAccessibilityRestartHint = false
+    @State private var accessibilityRefreshTask: Task<Void, Never>?
 
     init(
         diagnosticsService: InitialSetupDiagnosticsService,
@@ -82,6 +85,8 @@ struct InitialSetupView: View {
             HStack(spacing: 10) {
                 Button("アクセシビリティを許可") {
                     diagnosticsService.requestAccessibilityPermission()
+                    openAccessibilitySettings()
+                    startAccessibilityPolling()
                 }
                 Button("マイクを許可") {
                     isRequestingMicrophone = true
@@ -94,12 +99,28 @@ struct InitialSetupView: View {
                 }
                 .disabled(isRequestingMicrophone)
                 Button("システム設定を開く") {
-                    openSystemSettings()
+                    openAccessibilitySettings()
                 }
                 Spacer()
                 Button("再チェック") {
                     refreshChecks()
+                    shouldShowAccessibilityRestartHint = !isAccessibilityGranted
                 }
+                if !isAccessibilityGranted {
+                    Button("アプリを再起動") {
+                        restartApp()
+                    }
+                }
+            }
+
+            if isWaitingForAccessibilityUpdate {
+                Text("アクセシビリティ権限の反映を確認中です...")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else if shouldShowAccessibilityRestartHint && !isAccessibilityGranted {
+                Text("アクセシビリティ権限は反映まで数秒かかるか、再起動が必要な場合があります。許可後に「アプリを再起動」を実行してください。")
+                    .font(.caption)
+                    .foregroundColor(.orange)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -122,15 +143,58 @@ struct InitialSetupView: View {
         }
         .padding(24)
         .frame(minWidth: 700, minHeight: 620, alignment: .topLeading)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshChecks()
+        }
+        .onDisappear {
+            accessibilityRefreshTask?.cancel()
+            accessibilityRefreshTask = nil
+        }
+    }
+
+    private var isAccessibilityGranted: Bool {
+        report.items.first(where: { $0.id == "accessibility" })?.status == .passed
     }
 
     private func refreshChecks() {
         report = diagnosticsService.evaluate()
+        if isAccessibilityGranted {
+            isWaitingForAccessibilityUpdate = false
+            shouldShowAccessibilityRestartHint = false
+            accessibilityRefreshTask?.cancel()
+            accessibilityRefreshTask = nil
+        }
     }
 
-    private func openSystemSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy") {
+    private func openAccessibilitySettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    private func startAccessibilityPolling() {
+        accessibilityRefreshTask?.cancel()
+        shouldShowAccessibilityRestartHint = false
+        isWaitingForAccessibilityUpdate = true
+
+        accessibilityRefreshTask = Task { @MainActor in
+            for _ in 0..<20 {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                guard !Task.isCancelled else { return }
+                refreshChecks()
+                if isAccessibilityGranted {
+                    return
+                }
+            }
+
+            isWaitingForAccessibilityUpdate = false
+            shouldShowAccessibilityRestartHint = !isAccessibilityGranted
+            accessibilityRefreshTask = nil
+        }
+    }
+
+    private func restartApp() {
+        guard AppRelauncher.relaunchCurrentApp() else { return }
+        NSApp.terminate(nil)
     }
 }
