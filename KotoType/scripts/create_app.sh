@@ -78,6 +78,8 @@ RESOURCE_BUNDLE_PATH="$(find .build -type d -name 'KotoType_KotoType.bundle' | h
 if [ -n "${RESOURCE_BUNDLE_PATH}" ] && [ -d "${RESOURCE_BUNDLE_PATH}" ]; then
     echo "Copying SwiftPM resource bundle..."
     cp -R "${RESOURCE_BUNDLE_PATH}" "${RESOURCES_DIR}/"
+    # Bundle.module can resolve from app root in executable SwiftPM apps.
+    cp -R "${RESOURCE_BUNDLE_PATH}" "${BUNDLE_NAME}/"
 fi
 
 # icnsアイコンを生成（Finder / Applications表示用）
