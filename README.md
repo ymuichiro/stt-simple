@@ -160,7 +160,7 @@ Follow the on-screen instructions to grant permissions and install dependencies,
 
 ## Security Warning
 
-This app is distributed with a free ad-hoc signature, so you may see a Gatekeeper warning on first launch.
+This app is currently distributed without Apple Developer signing, so you may see a Gatekeeper warning on first launch.
 
 ### If You See a Warning
 
