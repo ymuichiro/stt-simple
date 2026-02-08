@@ -361,6 +361,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct Main {
     static func main() {
+        if CommandLine.arguments.contains("--diagnose-accessibility") {
+            let snapshot = AccessibilityDiagnostics.collect()
+            print(AccessibilityDiagnostics.renderJSON(snapshot))
+            return
+        }
+
         print("Main: Starting application")
         let app = NSApplication.shared
         print("Main: Application created")

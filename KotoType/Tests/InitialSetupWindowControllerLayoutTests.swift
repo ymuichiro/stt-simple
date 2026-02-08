@@ -11,7 +11,8 @@ final class InitialSetupWindowControllerLayoutTests: XCTestCase {
                 checkMicrophonePermission: { .denied },
                 requestAccessibilityPermission: {},
                 requestMicrophonePermission: { _ in },
-                findExecutable: { _ in nil }
+                findExecutable: { _ in nil },
+                currentBundlePath: { "/Applications/KotoType.app" }
             )
         )
 
@@ -19,10 +20,10 @@ final class InitialSetupWindowControllerLayoutTests: XCTestCase {
             diagnosticsService: diagnosticsService,
             onComplete: {}
         )
-        let window = try XCTUnwrap(controller.window)
+        let window: NSWindow = try XCTUnwrap(controller.window)
 
-        XCTAssertTrue(window.styleMask.contains(.resizable))
-        XCTAssertTrue(window.styleMask.contains(.closable))
+        XCTAssertTrue(window.styleMask.contains(NSWindow.StyleMask.resizable))
+        XCTAssertTrue(window.styleMask.contains(NSWindow.StyleMask.closable))
         XCTAssertEqual(window.minSize.width, 700)
         XCTAssertEqual(window.minSize.height, 620)
     }

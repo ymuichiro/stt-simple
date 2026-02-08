@@ -7,7 +7,8 @@ final class InitialSetupDiagnosticsServiceTests: XCTestCase {
             runtime: makeRuntime(
                 accessibility: .granted,
                 microphone: .granted,
-                ffmpegPath: "/opt/homebrew/bin/ffmpeg"
+                ffmpegPath: "/opt/homebrew/bin/ffmpeg",
+                bundlePath: "/Applications/KotoType.app"
             )
         )
 
@@ -22,7 +23,8 @@ final class InitialSetupDiagnosticsServiceTests: XCTestCase {
             runtime: makeRuntime(
                 accessibility: .denied,
                 microphone: .granted,
-                ffmpegPath: "/usr/local/bin/ffmpeg"
+                ffmpegPath: "/usr/local/bin/ffmpeg",
+                bundlePath: "/Applications/KotoType.app"
             )
         )
 
@@ -37,7 +39,8 @@ final class InitialSetupDiagnosticsServiceTests: XCTestCase {
             runtime: makeRuntime(
                 accessibility: .granted,
                 microphone: .denied,
-                ffmpegPath: "/usr/local/bin/ffmpeg"
+                ffmpegPath: "/usr/local/bin/ffmpeg",
+                bundlePath: "/Applications/KotoType.app"
             )
         )
 
@@ -52,7 +55,8 @@ final class InitialSetupDiagnosticsServiceTests: XCTestCase {
             runtime: makeRuntime(
                 accessibility: .granted,
                 microphone: .granted,
-                ffmpegPath: nil
+                ffmpegPath: nil,
+                bundlePath: "/Applications/KotoType.app"
             )
         )
 
@@ -62,17 +66,35 @@ final class InitialSetupDiagnosticsServiceTests: XCTestCase {
         XCTAssertEqual(ffmpeg.status, .failed)
     }
 
+    func testEvaluateAccessibilityDetailMentionsAppTranslocation() throws {
+        let service = InitialSetupDiagnosticsService(
+            runtime: makeRuntime(
+                accessibility: .denied,
+                microphone: .granted,
+                ffmpegPath: "/usr/local/bin/ffmpeg",
+                bundlePath: "/private/var/folders/xx/AppTranslocation/ABC/d/KotoType.app"
+            )
+        )
+
+        let report = service.evaluate()
+        let accessibility = try XCTUnwrap(report.items.first { $0.id == "accessibility" })
+        XCTAssertEqual(accessibility.status, .failed)
+        XCTAssertTrue(accessibility.detail.contains("AppTranslocation"))
+    }
+
     private func makeRuntime(
         accessibility: PermissionChecker.PermissionStatus,
         microphone: PermissionChecker.PermissionStatus,
-        ffmpegPath: String?
+        ffmpegPath: String?,
+        bundlePath: String
     ) -> InitialSetupDiagnosticsService.Runtime {
         return InitialSetupDiagnosticsService.Runtime(
             checkAccessibilityPermission: { accessibility },
             checkMicrophonePermission: { microphone },
             requestAccessibilityPermission: {},
             requestMicrophonePermission: { completion in completion(microphone) },
-            findExecutable: { _ in ffmpegPath }
+            findExecutable: { _ in ffmpegPath },
+            currentBundlePath: { bundlePath }
         )
     }
 }

@@ -28,6 +28,7 @@ final class InitialSetupDiagnosticsService: @unchecked Sendable {
         var requestAccessibilityPermission: () -> Void
         var requestMicrophonePermission: (@escaping @Sendable (PermissionChecker.PermissionStatus) -> Void) -> Void
         var findExecutable: (String) -> String?
+        var currentBundlePath: () -> String
     }
 
     private let runtime: Runtime
@@ -40,13 +41,19 @@ final class InitialSetupDiagnosticsService: @unchecked Sendable {
         var items: [InitialSetupCheckItem] = []
 
         let accessibilityStatus = runtime.checkAccessibilityPermission()
+        let accessibilityDetail: String
+        if accessibilityStatus == .granted {
+            accessibilityDetail = "許可済み"
+        } else if runtime.currentBundlePath().contains("/AppTranslocation/") {
+            accessibilityDetail = "現在AppTranslocationから実行中のため権限が反映されない可能性があります。/Applications に移動して起動し直してください"
+        } else {
+            accessibilityDetail = "キーボード入力シミュレーションに必要です"
+        }
         items.append(
             InitialSetupCheckItem(
                 id: "accessibility",
                 title: "アクセシビリティ権限",
-                detail: accessibilityStatus == .granted
-                    ? "許可済み"
-                    : "キーボード入力シミュレーションに必要です",
+                detail: accessibilityDetail,
                 status: accessibilityStatus == .granted ? .passed : .failed,
                 required: true
             )
@@ -99,7 +106,8 @@ extension InitialSetupDiagnosticsService.Runtime {
             },
             findExecutable: { name in
                 InitialSetupDiagnosticsService.findExecutable(named: name)
-            }
+            },
+            currentBundlePath: { Bundle.main.bundlePath }
         )
     }
 }
