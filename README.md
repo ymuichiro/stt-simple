@@ -13,6 +13,7 @@ Macネイティブの音声文字起こしアプリケーション。
 - グローバルホットキー（Ctrl+Option+Space）で録音開始/停止
 - OpenAI Whisperによる高精度な文字起こし
 - 自動でテキストをカーソル位置に入力
+- 音声前処理によるノイズ低減（スペクトルノイズ除去 + 正規化）
 - 過去の文字起こし結果を履歴で参照
 - UIから`wav`/`mp3`音声ファイルを取り込み文字起こし
 - ログイン時の自動起動 ON/OFF
@@ -207,6 +208,38 @@ make view-log
 
 # または直接実行
 tail -100 ~/Library/Application\ Support/stt-simple/server.log
+```
+
+### ノイズ除去の切り替え
+
+デフォルトでは音声前処理でノイズ除去を有効化しています。互換性の都合で無効化したい場合は、以下の環境変数を設定してください。
+
+```bash
+export STT_ENABLE_NOISE_REDUCTION=0
+```
+
+### 小さい声の自動増幅（Auto Gain）
+
+デフォルトで有効です。入力が小さいときは前処理後に自動で音量を持ち上げてから文字起こしします。
+
+```bash
+export STT_AUTO_GAIN_ENABLED=1
+```
+
+必要に応じて閾値や増幅量の上限を調整できます。
+
+```bash
+export STT_AUTO_GAIN_WEAK_THRESHOLD_DBFS=-18
+export STT_AUTO_GAIN_TARGET_PEAK_DBFS=-10
+export STT_AUTO_GAIN_MAX_DB=18
+```
+
+### 雑音環境向けVAD強度の切り替え
+
+デフォルトでは雑音環境向けにVADをやや厳しめに設定しています。従来に近い設定に戻したい場合は以下を設定してください。
+
+```bash
+export STT_VAD_STRICT=0
 ```
 
 ### 型検査とリンティング

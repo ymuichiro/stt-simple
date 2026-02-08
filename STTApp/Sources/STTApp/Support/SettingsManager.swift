@@ -16,6 +16,10 @@ struct AppSettings: Codable {
     var silenceDuration: Double
     var parallelism: Int
     var launchAtLogin: Bool
+    var autoGainEnabled: Bool
+    var autoGainWeakThresholdDbfs: Double
+    var autoGainTargetPeakDbfs: Double
+    var autoGainMaxDb: Double
 
     init(
         hotkeyConfig: HotkeyConfiguration = HotkeyConfiguration(),
@@ -32,7 +36,11 @@ struct AppSettings: Codable {
         silenceThreshold: Double = -40.0,
         silenceDuration: Double = 0.5,
         parallelism: Int = 2,
-        launchAtLogin: Bool = false
+        launchAtLogin: Bool = false,
+        autoGainEnabled: Bool = true,
+        autoGainWeakThresholdDbfs: Double = -18.0,
+        autoGainTargetPeakDbfs: Double = -10.0,
+        autoGainMaxDb: Double = 18.0
     ) {
         self.hotkeyConfig = hotkeyConfig
         self.language = language
@@ -49,6 +57,10 @@ struct AppSettings: Codable {
         self.silenceDuration = silenceDuration
         self.parallelism = parallelism
         self.launchAtLogin = launchAtLogin
+        self.autoGainEnabled = autoGainEnabled
+        self.autoGainWeakThresholdDbfs = autoGainWeakThresholdDbfs
+        self.autoGainTargetPeakDbfs = autoGainTargetPeakDbfs
+        self.autoGainMaxDb = autoGainMaxDb
     }
 
     init(from decoder: Decoder) throws {
@@ -68,6 +80,10 @@ struct AppSettings: Codable {
         silenceDuration = try container.decodeIfPresent(Double.self, forKey: .silenceDuration) ?? 0.5
         parallelism = try container.decodeIfPresent(Int.self, forKey: .parallelism) ?? 2
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
+        autoGainEnabled = try container.decodeIfPresent(Bool.self, forKey: .autoGainEnabled) ?? true
+        autoGainWeakThresholdDbfs = try container.decodeIfPresent(Double.self, forKey: .autoGainWeakThresholdDbfs) ?? -18.0
+        autoGainTargetPeakDbfs = try container.decodeIfPresent(Double.self, forKey: .autoGainTargetPeakDbfs) ?? -10.0
+        autoGainMaxDb = try container.decodeIfPresent(Double.self, forKey: .autoGainMaxDb) ?? 18.0
     }
 }
 
@@ -87,7 +103,7 @@ final class SettingsManager: @unchecked Sendable {
     
     func save(_ settings: AppSettings) {
         Logger.shared.log("SettingsManager.save: saving to \(settingsURL.path)")
-        Logger.shared.log("SettingsManager.save: hotkey=\(settings.hotkeyConfig.description), lang=\(settings.language), punctuation=\(settings.autoPunctuation), temp=\(settings.temperature), beam=\(settings.beamSize), noSpeech=\(settings.noSpeechThreshold), compression=\(settings.compressionRatioThreshold), task=\(settings.task), bestOf=\(settings.bestOf), vad=\(settings.vadThreshold), launchAtLogin=\(settings.launchAtLogin)")
+        Logger.shared.log("SettingsManager.save: hotkey=\(settings.hotkeyConfig.description), lang=\(settings.language), punctuation=\(settings.autoPunctuation), temp=\(settings.temperature), beam=\(settings.beamSize), noSpeech=\(settings.noSpeechThreshold), compression=\(settings.compressionRatioThreshold), task=\(settings.task), bestOf=\(settings.bestOf), vad=\(settings.vadThreshold), launchAtLogin=\(settings.launchAtLogin), autoGainEnabled=\(settings.autoGainEnabled), autoGainWeakThresholdDbfs=\(settings.autoGainWeakThresholdDbfs), autoGainTargetPeakDbfs=\(settings.autoGainTargetPeakDbfs), autoGainMaxDb=\(settings.autoGainMaxDb)")
         do {
             let data = try JSONEncoder().encode(settings)
             try data.write(to: settingsURL)
@@ -104,7 +120,7 @@ final class SettingsManager: @unchecked Sendable {
             Logger.shared.log("No saved settings found, returning defaults")
             return AppSettings()
         }
-        Logger.shared.log("SettingsManager.load: hotkey=\(settings.hotkeyConfig.description), lang=\(settings.language), punctuation=\(settings.autoPunctuation), temp=\(settings.temperature), beam=\(settings.beamSize), noSpeech=\(settings.noSpeechThreshold), compression=\(settings.compressionRatioThreshold), task=\(settings.task), bestOf=\(settings.bestOf), vad=\(settings.vadThreshold), launchAtLogin=\(settings.launchAtLogin)")
+        Logger.shared.log("SettingsManager.load: hotkey=\(settings.hotkeyConfig.description), lang=\(settings.language), punctuation=\(settings.autoPunctuation), temp=\(settings.temperature), beam=\(settings.beamSize), noSpeech=\(settings.noSpeechThreshold), compression=\(settings.compressionRatioThreshold), task=\(settings.task), bestOf=\(settings.bestOf), vad=\(settings.vadThreshold), launchAtLogin=\(settings.launchAtLogin), autoGainEnabled=\(settings.autoGainEnabled), autoGainWeakThresholdDbfs=\(settings.autoGainWeakThresholdDbfs), autoGainTargetPeakDbfs=\(settings.autoGainTargetPeakDbfs), autoGainMaxDb=\(settings.autoGainMaxDb)")
         return settings
     }
 }

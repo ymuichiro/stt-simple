@@ -42,6 +42,10 @@ final class SettingsManagerTests: XCTestCase {
         XCTAssertEqual(settings.bestOf, 5)
         XCTAssertEqual(settings.vadThreshold, 0.5)
         XCTAssertEqual(settings.launchAtLogin, false)
+        XCTAssertEqual(settings.autoGainEnabled, true)
+        XCTAssertEqual(settings.autoGainWeakThresholdDbfs, -18.0)
+        XCTAssertEqual(settings.autoGainTargetPeakDbfs, -10.0)
+        XCTAssertEqual(settings.autoGainMaxDb, 18.0)
     }
 
     func testSaveAndLoad() throws {
@@ -61,6 +65,10 @@ final class SettingsManagerTests: XCTestCase {
         modifiedSettings.bestOf = 3
         modifiedSettings.vadThreshold = 0.3
         modifiedSettings.launchAtLogin = true
+        modifiedSettings.autoGainEnabled = false
+        modifiedSettings.autoGainWeakThresholdDbfs = -25.0
+        modifiedSettings.autoGainTargetPeakDbfs = -7.0
+        modifiedSettings.autoGainMaxDb = 10.0
         
         settingsManager.save(modifiedSettings)
         let loadedSettings = settingsManager.load()
@@ -76,6 +84,10 @@ final class SettingsManagerTests: XCTestCase {
         XCTAssertEqual(loadedSettings.bestOf, 3)
         XCTAssertEqual(loadedSettings.vadThreshold, 0.3)
         XCTAssertEqual(loadedSettings.launchAtLogin, true)
+        XCTAssertEqual(loadedSettings.autoGainEnabled, false)
+        XCTAssertEqual(loadedSettings.autoGainWeakThresholdDbfs, -25.0)
+        XCTAssertEqual(loadedSettings.autoGainTargetPeakDbfs, -7.0)
+        XCTAssertEqual(loadedSettings.autoGainMaxDb, 10.0)
         
         settingsManager.save(originalSettings)
     }

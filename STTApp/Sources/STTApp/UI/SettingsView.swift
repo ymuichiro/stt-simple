@@ -17,6 +17,10 @@ struct SettingsView: View {
     @State private var silenceDuration: Double
     @State private var parallelism: Int
     @State private var launchAtLogin: Bool
+    @State private var autoGainEnabled: Bool
+    @State private var autoGainWeakThresholdDbfs: Double
+    @State private var autoGainTargetPeakDbfs: Double
+    @State private var autoGainMaxDb: Double
     @State private var dictionaryWords: [String]
     @Binding var isPresented: Bool
     
@@ -40,6 +44,10 @@ struct SettingsView: View {
     @State private var pendingSilenceDuration: Double
     @State private var pendingParallelism: Int
     @State private var pendingLaunchAtLogin: Bool
+    @State private var pendingAutoGainEnabled: Bool
+    @State private var pendingAutoGainWeakThresholdDbfs: Double
+    @State private var pendingAutoGainTargetPeakDbfs: Double
+    @State private var pendingAutoGainMaxDb: Double
     @State private var pendingDictionaryWords: [String]
     @State private var pendingDictionaryEntry: String
     
@@ -84,6 +92,10 @@ struct SettingsView: View {
         self._silenceDuration = State(initialValue: settings.silenceDuration)
         self._parallelism = State(initialValue: settings.parallelism)
         self._launchAtLogin = State(initialValue: settings.launchAtLogin)
+        self._autoGainEnabled = State(initialValue: settings.autoGainEnabled)
+        self._autoGainWeakThresholdDbfs = State(initialValue: settings.autoGainWeakThresholdDbfs)
+        self._autoGainTargetPeakDbfs = State(initialValue: settings.autoGainTargetPeakDbfs)
+        self._autoGainMaxDb = State(initialValue: settings.autoGainMaxDb)
         self._dictionaryWords = State(initialValue: userDictionaryWords)
         self.hotkeyConfig = settings.hotkeyConfig
         self.language = settings.language
@@ -100,6 +112,10 @@ struct SettingsView: View {
         self.silenceDuration = settings.silenceDuration
         self.parallelism = settings.parallelism
         self.launchAtLogin = settings.launchAtLogin
+        self.autoGainEnabled = settings.autoGainEnabled
+        self.autoGainWeakThresholdDbfs = settings.autoGainWeakThresholdDbfs
+        self.autoGainTargetPeakDbfs = settings.autoGainTargetPeakDbfs
+        self.autoGainMaxDb = settings.autoGainMaxDb
         self.dictionaryWords = userDictionaryWords
         
         self._pendingHotkeyConfig = State(initialValue: settings.hotkeyConfig)
@@ -117,6 +133,10 @@ struct SettingsView: View {
         self._pendingSilenceDuration = State(initialValue: settings.silenceDuration)
         self._pendingParallelism = State(initialValue: settings.parallelism)
         self._pendingLaunchAtLogin = State(initialValue: settings.launchAtLogin)
+        self._pendingAutoGainEnabled = State(initialValue: settings.autoGainEnabled)
+        self._pendingAutoGainWeakThresholdDbfs = State(initialValue: settings.autoGainWeakThresholdDbfs)
+        self._pendingAutoGainTargetPeakDbfs = State(initialValue: settings.autoGainTargetPeakDbfs)
+        self._pendingAutoGainMaxDb = State(initialValue: settings.autoGainMaxDb)
         self._pendingDictionaryWords = State(initialValue: userDictionaryWords)
         self._pendingDictionaryEntry = State(initialValue: "")
     }
@@ -358,6 +378,50 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
 
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle("小さい声を自動増幅する", isOn: $pendingAutoGainEnabled)
+
+                    Text("入力が小さい場合のみ音量を持ち上げてから文字起こしします")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Auto Gain 弱入力閾値 (dBFS): \(String(format: "%.1f", pendingAutoGainWeakThresholdDbfs))")
+                        .font(.subheadline)
+
+                    Slider(value: $pendingAutoGainWeakThresholdDbfs, in: (-40.0)...(-6.0), step: 1.0)
+                        .disabled(!pendingAutoGainEnabled)
+
+                    Text("この値より小さい音量を増幅対象にします")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Auto Gain 目標ピーク (dBFS): \(String(format: "%.1f", pendingAutoGainTargetPeakDbfs))")
+                        .font(.subheadline)
+
+                    Slider(value: $pendingAutoGainTargetPeakDbfs, in: (-20.0)...(-1.0), step: 1.0)
+                        .disabled(!pendingAutoGainEnabled)
+
+                    Text("増幅後に目指すピークレベル")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Auto Gain 最大増幅 (dB): \(String(format: "%.0f", pendingAutoGainMaxDb))")
+                        .font(.subheadline)
+
+                    Slider(value: $pendingAutoGainMaxDb, in: 3.0...30.0, step: 1.0)
+                        .disabled(!pendingAutoGainEnabled)
+
+                    Text("急激な増幅を防ぐ上限値")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
                 VStack(alignment: .leading, spacing: 10) {
                     Text("専門用語辞書")
                         .font(.subheadline)
@@ -572,7 +636,11 @@ struct SettingsView: View {
             silenceThreshold: silenceThreshold,
             silenceDuration: silenceDuration,
             parallelism: parallelism,
-            launchAtLogin: launchAtLogin
+            launchAtLogin: launchAtLogin,
+            autoGainEnabled: autoGainEnabled,
+            autoGainWeakThresholdDbfs: autoGainWeakThresholdDbfs,
+            autoGainTargetPeakDbfs: autoGainTargetPeakDbfs,
+            autoGainMaxDb: autoGainMaxDb
         )
         SettingsManager.shared.save(settings)
         UserDictionaryManager.shared.saveWords(dictionaryWords)
@@ -595,7 +663,16 @@ struct SettingsView: View {
         silenceDuration = pendingSilenceDuration
         parallelism = pendingParallelism
         launchAtLogin = pendingLaunchAtLogin
+        autoGainEnabled = pendingAutoGainEnabled
+        autoGainWeakThresholdDbfs = pendingAutoGainWeakThresholdDbfs
+        autoGainTargetPeakDbfs = pendingAutoGainTargetPeakDbfs
+        autoGainMaxDb = pendingAutoGainMaxDb
         dictionaryWords = pendingDictionaryWords
+
+        if autoGainTargetPeakDbfs <= autoGainWeakThresholdDbfs {
+            autoGainTargetPeakDbfs = min(-1.0, autoGainWeakThresholdDbfs + 1.0)
+            pendingAutoGainTargetPeakDbfs = autoGainTargetPeakDbfs
+        }
 
         _ = LaunchAtLoginManager.shared.setEnabled(launchAtLogin)
         saveSettings()

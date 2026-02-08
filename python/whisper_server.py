@@ -6,6 +6,8 @@ import re
 import sys
 import traceback
 from datetime import datetime
+from math import inf, log10
+import wave
 
 
 def default_dictionary_path():
@@ -27,39 +29,261 @@ def setup_logging():
     return log_file, log
 
 
-def audio_preprocess(input_path, log):
-    try:
-        import ffmpeg
+def build_audio_filter_chain(enable_noise_reduction=True, use_nlm_denoise=False):
+    filters = [
+        "highpass=f=100",
+        "lowpass=f=7800",
+    ]
 
-        base, ext = os.path.splitext(input_path)
+    if enable_noise_reduction:
+        if use_nlm_denoise:
+            # Non-local means denoise (stronger but not always available)
+            filters.append("anlmdn=s=0.08:p=0.003")
+        # Spectral denoise to suppress stationary noise (air conditioner, fan, etc.)
+        filters.append("afftdn=nf=-26:tn=1")
+
+    filters.extend(
+        [
+            "dynaudnorm=f=90:g=15:p=0.8",
+            "acompressor=threshold=-21dB:ratio=2.8:attack=5:release=90",
+        ]
+    )
+    return ",".join(filters)
+
+
+def build_audio_filter_chain_candidates(enable_noise_reduction=True):
+    if not enable_noise_reduction:
+        return [build_audio_filter_chain(enable_noise_reduction=False)]
+
+    return [
+        build_audio_filter_chain(enable_noise_reduction=True, use_nlm_denoise=True),
+        build_audio_filter_chain(enable_noise_reduction=True, use_nlm_denoise=False),
+        build_audio_filter_chain(enable_noise_reduction=False),
+    ]
+
+
+def format_ffmpeg_error(error):
+    stderr_output = getattr(error, "stderr", None)
+    if isinstance(stderr_output, (bytes, bytearray)):
+        return stderr_output.decode("utf-8", errors="ignore").strip()
+    return str(error)
+
+
+def run_preprocess_with_filter(ffmpeg_module, input_path, output_path, filter_chain):
+    (
+        ffmpeg_module.input(input_path)
+        .output(
+            output_path,
+            acodec="pcm_s16le",
+            ac=1,
+            ar="16000",
+            af=filter_chain,
+        )
+        .overwrite_output()
+        .run(quiet=True)
+    )
+
+
+def apply_gain_to_wav(ffmpeg_module, input_path, output_path, gain_db):
+    gain_filter_chain = f"volume={gain_db:.2f}dB,alimiter=limit=0.98"
+    run_preprocess_with_filter(
+        ffmpeg_module=ffmpeg_module,
+        input_path=input_path,
+        output_path=output_path,
+        filter_chain=gain_filter_chain,
+    )
+
+
+def analyze_wav_peak_dbfs(wav_path):
+    max_peak = 0
+
+    with wave.open(wav_path, "rb") as wav_file:
+        sample_width = wav_file.getsampwidth()
+        channel_count = wav_file.getnchannels()
+
+        if sample_width != 2:
+            raise ValueError(
+                f"Unsupported sample width for peak analysis: {sample_width * 8}-bit"
+            )
+
+        while True:
+            frames = wav_file.readframes(4096)
+            if not frames:
+                break
+
+            frame_count = len(frames) // (sample_width * channel_count)
+            if frame_count <= 0:
+                continue
+
+            for frame_index in range(frame_count):
+                offset = frame_index * sample_width * channel_count
+                sample_bytes = frames[offset : offset + sample_width]
+                sample_value = int.from_bytes(
+                    sample_bytes,
+                    byteorder="little",
+                    signed=True,
+                )
+                abs_sample = abs(sample_value)
+                if abs_sample > max_peak:
+                    max_peak = abs_sample
+
+    if max_peak <= 0:
+        return -inf
+
+    return 20.0 * log10(max_peak / 32767.0)
+
+
+def determine_gain_for_weak_audio(
+    peak_dbfs,
+    weak_threshold_dbfs=-18.0,
+    target_peak_dbfs=-10.0,
+    max_gain_db=18.0,
+):
+    if peak_dbfs >= weak_threshold_dbfs:
+        return 0.0
+
+    required_gain = target_peak_dbfs - peak_dbfs
+    if required_gain <= 0:
+        return 0.0
+
+    return min(required_gain, max_gain_db)
+
+
+def build_vad_parameters(vad_threshold):
+    strict_mode = parse_bool(os.environ.get("STT_VAD_STRICT", "1"), default=True)
+    threshold_delta = 0.07 if strict_mode else 0.0
+    effective_threshold = max(0.0, min(1.0, vad_threshold + threshold_delta))
+
+    if strict_mode:
+        min_speech_duration_ms = 320
+        min_silence_duration_ms = 700
+        speech_pad_ms = 80
+    else:
+        min_speech_duration_ms = 250
+        min_silence_duration_ms = 500
+        speech_pad_ms = 30
+
+    return {
+        "threshold": effective_threshold,
+        "min_speech_duration_ms": min_speech_duration_ms,
+        "min_silence_duration_ms": min_silence_duration_ms,
+        "speech_pad_ms": speech_pad_ms,
+    }
+
+
+def audio_preprocess(
+    input_path,
+    log,
+    ffmpeg_module=None,
+    peak_analyzer=None,
+    auto_gain_enabled=None,
+    auto_gain_weak_threshold_dbfs=None,
+    auto_gain_target_peak_dbfs=None,
+    auto_gain_max_db=None,
+):
+    if ffmpeg_module is None:
+        try:
+            import ffmpeg as imported_ffmpeg
+
+            ffmpeg_module = imported_ffmpeg
+        except ImportError:
+            log("ffmpeg-python not available, skipping preprocessing")
+            return input_path
+
+    if peak_analyzer is None:
+        peak_analyzer = analyze_wav_peak_dbfs
+
+    try:
+        base, _ = os.path.splitext(input_path)
         output_path = f"{base}_processed.wav"
+        boosted_output_path = f"{base}_processed_gain.wav"
+        enable_noise_reduction = parse_bool(
+            os.environ.get("STT_ENABLE_NOISE_REDUCTION", "1"),
+            default=True,
+        )
+        if auto_gain_enabled is None:
+            auto_gain_enabled = parse_bool(
+                os.environ.get("STT_AUTO_GAIN_ENABLED", "1"),
+                default=True,
+            )
+        if auto_gain_weak_threshold_dbfs is None:
+            auto_gain_weak_threshold_dbfs = parse_float(
+                os.environ.get("STT_AUTO_GAIN_WEAK_THRESHOLD_DBFS"),
+                default=-18.0,
+            )
+        if auto_gain_target_peak_dbfs is None:
+            auto_gain_target_peak_dbfs = parse_float(
+                os.environ.get("STT_AUTO_GAIN_TARGET_PEAK_DBFS"),
+                default=-10.0,
+            )
+        if auto_gain_max_db is None:
+            auto_gain_max_db = parse_float(
+                os.environ.get("STT_AUTO_GAIN_MAX_DB"),
+                default=18.0,
+            )
+
+        auto_gain_max_db = max(0.0, auto_gain_max_db)
+        if auto_gain_target_peak_dbfs <= auto_gain_weak_threshold_dbfs:
+            auto_gain_target_peak_dbfs = min(
+                -1.0,
+                auto_gain_weak_threshold_dbfs + 1.0,
+            )
 
         log(f"Preprocessing audio: {input_path} -> {output_path}")
-
-        (
-            ffmpeg.input(input_path)
-            .output(
-                output_path,
-                acodec="pcm_s16le",
-                ac=1,
-                ar="16000",
-                af=[
-                    "highpass=f=200",
-                    "lowpass=f=3000",
-                    "dynaudnorm",
-                    "acompressor=threshold=-20dB:ratio=4:attack=5:release=50",
-                ],
-            )
-            .overwrite_output()
-            .run(quiet=True)
+        filter_candidates = build_audio_filter_chain_candidates(
+            enable_noise_reduction=enable_noise_reduction
         )
 
-        log(f"Audio preprocessing completed: {output_path}")
-        return output_path
+        for index, filter_chain in enumerate(filter_candidates):
+            if index == 0:
+                log(f"Audio preprocess filter chain: {filter_chain}")
+            else:
+                log(f"Retry preprocess with fallback filter chain #{index}: {filter_chain}")
+            try:
+                run_preprocess_with_filter(
+                    ffmpeg_module=ffmpeg_module,
+                    input_path=input_path,
+                    output_path=output_path,
+                    filter_chain=filter_chain,
+                )
 
-    except ImportError:
-        log("ffmpeg-python not available, skipping preprocessing")
+                if auto_gain_enabled:
+                    peak_dbfs = peak_analyzer(output_path)
+                    gain_db = determine_gain_for_weak_audio(
+                        peak_dbfs=peak_dbfs,
+                        weak_threshold_dbfs=auto_gain_weak_threshold_dbfs,
+                        target_peak_dbfs=auto_gain_target_peak_dbfs,
+                        max_gain_db=auto_gain_max_db,
+                    )
+                    log(
+                        f"Auto gain analysis: peak={peak_dbfs:.2f} dBFS, gain={gain_db:.2f} dB"
+                    )
+
+                    if gain_db > 0.0:
+                        apply_gain_to_wav(
+                            ffmpeg_module=ffmpeg_module,
+                            input_path=output_path,
+                            output_path=boosted_output_path,
+                            gain_db=gain_db,
+                        )
+                        os.replace(boosted_output_path, output_path)
+                        log(
+                            f"Applied automatic gain for weak input: +{gain_db:.2f} dB"
+                        )
+                    else:
+                        log("Auto gain skipped: input level is sufficient")
+
+                log(f"Audio preprocessing completed: {output_path}")
+                return output_path
+            except Exception as error:
+                log(
+                    "Noise reduction preprocessing failed, trying next filter chain: "
+                    f"{format_ffmpeg_error(error)}"
+                )
+
+        log("All preprocessing filter chains failed, using original audio")
         return input_path
+
     except Exception as e:
         log(f"Audio preprocessing failed: {str(e)}")
         return input_path
@@ -75,6 +299,32 @@ def parse_bool(value, default=True):
     if normalized in {"0", "false", "no", "off"}:
         return False
     return default
+
+
+def parse_optional_bool(value):
+    if value is None:
+        return None
+    return parse_bool(value, default=None)
+
+
+def parse_float(value, default):
+    if value is None:
+        return default
+
+    try:
+        return float(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def parse_optional_float(value):
+    if value is None:
+        return None
+
+    try:
+        return float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
 
 
 def post_process_text(text, language="ja", auto_punctuation=True):
@@ -240,12 +490,26 @@ def main():
             best_of = int(parts[7]) if len(parts) > 7 else 5
             vad_threshold = float(parts[8]) if len(parts) > 8 else 0.5
             auto_punctuation = parse_bool(parts[9], default=True) if len(parts) > 9 else True
+            auto_gain_enabled = (
+                parse_optional_bool(parts[10]) if len(parts) > 10 else None
+            )
+            auto_gain_weak_threshold_dbfs = (
+                parse_optional_float(parts[11]) if len(parts) > 11 else None
+            )
+            auto_gain_target_peak_dbfs = (
+                parse_optional_float(parts[12]) if len(parts) > 12 else None
+            )
+            auto_gain_max_db = (
+                parse_optional_float(parts[13]) if len(parts) > 13 else None
+            )
 
             actual_language = None if language == "auto" else language
             log(
                 f"Received: audio={audio_path}, language={language}, actual_language={actual_language}, temp={temperature}, beam={beam_size}, "
                 f"no_speech_threshold={no_speech_threshold}, compression_ratio_threshold={compression_ratio_threshold}, "
-                f"task={task}, best_of={best_of}, vad_threshold={vad_threshold}, auto_punctuation={auto_punctuation}"
+                f"task={task}, best_of={best_of}, vad_threshold={vad_threshold}, auto_punctuation={auto_punctuation}, "
+                f"auto_gain_enabled={auto_gain_enabled}, auto_gain_weak_threshold_dbfs={auto_gain_weak_threshold_dbfs}, "
+                f"auto_gain_target_peak_dbfs={auto_gain_target_peak_dbfs}, auto_gain_max_db={auto_gain_max_db}"
             )
 
             if not audio_path:
@@ -260,7 +524,14 @@ def main():
 
             log(f"File exists, size: {os.path.getsize(audio_path)} bytes")
 
-            processed_audio_path = audio_preprocess(audio_path, log)
+            processed_audio_path = audio_preprocess(
+                audio_path,
+                log,
+                auto_gain_enabled=auto_gain_enabled,
+                auto_gain_weak_threshold_dbfs=auto_gain_weak_threshold_dbfs,
+                auto_gain_target_peak_dbfs=auto_gain_target_peak_dbfs,
+                auto_gain_max_db=auto_gain_max_db,
+            )
 
             try:
                 if (
@@ -285,10 +556,11 @@ def main():
             )
 
             start_time = time.time()
+            vad_parameters = build_vad_parameters(vad_threshold)
 
             log("Starting transcription with Whisper...")
             log(
-                f"Transcription parameters: audio={transcription_audio_path}, language={actual_language}, task={task}, temperature={temperature}, beam_size={beam_size}, best_of={best_of}, vad_threshold={vad_threshold}, auto_punctuation={auto_punctuation}, initial_prompt={initial_prompt[:50] if initial_prompt else None}..."
+                f"Transcription parameters: audio={transcription_audio_path}, language={actual_language}, task={task}, temperature={temperature}, beam_size={beam_size}, best_of={best_of}, vad_parameters={vad_parameters}, auto_punctuation={auto_punctuation}, initial_prompt={initial_prompt[:50] if initial_prompt else None}..."
             )
 
             try:
@@ -300,12 +572,7 @@ def main():
                     beam_size=beam_size,
                     best_of=best_of,
                     vad_filter=True,
-                    vad_parameters={
-                        "threshold": vad_threshold,
-                        "min_speech_duration_ms": 250,
-                        "min_silence_duration_ms": 500,
-                        "speech_pad_ms": 30,
-                    },
+                    vad_parameters=vad_parameters,
                     word_timestamps=False,
                     initial_prompt=initial_prompt,
                     no_speech_threshold=no_speech_threshold,

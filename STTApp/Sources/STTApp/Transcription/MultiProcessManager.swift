@@ -91,7 +91,11 @@ final class MultiProcessManager: @unchecked Sendable {
             task: context.settings.task,
             bestOf: context.settings.bestOf,
             vadThreshold: context.settings.vadThreshold,
-            autoPunctuation: context.settings.autoPunctuation
+            autoPunctuation: context.settings.autoPunctuation,
+            autoGainEnabled: context.settings.autoGainEnabled,
+            autoGainWeakThresholdDbfs: context.settings.autoGainWeakThresholdDbfs,
+            autoGainTargetPeakDbfs: context.settings.autoGainTargetPeakDbfs,
+            autoGainMaxDb: context.settings.autoGainMaxDb
         )
 
         if !sendSucceeded {

@@ -23,7 +23,11 @@ protocol PythonProcessManaging: AnyObject {
         task: String,
         bestOf: Int,
         vadThreshold: Double,
-        autoPunctuation: Bool
+        autoPunctuation: Bool,
+        autoGainEnabled: Bool,
+        autoGainWeakThresholdDbfs: Double,
+        autoGainTargetPeakDbfs: Double,
+        autoGainMaxDb: Double
     ) -> Bool
     func isRunning() -> Bool
     func stop()
@@ -102,7 +106,11 @@ final class ImportedAudioTranscriptionManager: @unchecked Sendable {
             task: settings.task,
             bestOf: settings.bestOf,
             vadThreshold: settings.vadThreshold,
-            autoPunctuation: settings.autoPunctuation
+            autoPunctuation: settings.autoPunctuation,
+            autoGainEnabled: settings.autoGainEnabled,
+            autoGainWeakThresholdDbfs: settings.autoGainWeakThresholdDbfs,
+            autoGainTargetPeakDbfs: settings.autoGainTargetPeakDbfs,
+            autoGainMaxDb: settings.autoGainMaxDb
         )
 
         if !succeeded {

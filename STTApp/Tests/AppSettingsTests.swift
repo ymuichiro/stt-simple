@@ -17,6 +17,10 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(settings.bestOf, 5)
         XCTAssertEqual(settings.vadThreshold, 0.5)
         XCTAssertEqual(settings.launchAtLogin, false)
+        XCTAssertEqual(settings.autoGainEnabled, true)
+        XCTAssertEqual(settings.autoGainWeakThresholdDbfs, -18.0)
+        XCTAssertEqual(settings.autoGainTargetPeakDbfs, -10.0)
+        XCTAssertEqual(settings.autoGainMaxDb, 18.0)
     }
 
     func testCustomInitialization() throws {
@@ -38,7 +42,11 @@ final class AppSettingsTests: XCTestCase {
             task: "translate",
             bestOf: 3,
             vadThreshold: 0.3,
-            launchAtLogin: true
+            launchAtLogin: true,
+            autoGainEnabled: false,
+            autoGainWeakThresholdDbfs: -24.0,
+            autoGainTargetPeakDbfs: -8.0,
+            autoGainMaxDb: 12.0
         )
         
         XCTAssertEqual(settings.hotkeyConfig.keyCode, 36)
@@ -52,6 +60,10 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(settings.bestOf, 3)
         XCTAssertEqual(settings.vadThreshold, 0.3)
         XCTAssertEqual(settings.launchAtLogin, true)
+        XCTAssertEqual(settings.autoGainEnabled, false)
+        XCTAssertEqual(settings.autoGainWeakThresholdDbfs, -24.0)
+        XCTAssertEqual(settings.autoGainTargetPeakDbfs, -8.0)
+        XCTAssertEqual(settings.autoGainMaxDb, 12.0)
     }
 
     func testCodingAndDecoding() throws {
@@ -73,7 +85,11 @@ final class AppSettingsTests: XCTestCase {
             task: "transcribe",
             bestOf: 6,
             vadThreshold: 0.4,
-            launchAtLogin: true
+            launchAtLogin: true,
+            autoGainEnabled: false,
+            autoGainWeakThresholdDbfs: -23.0,
+            autoGainTargetPeakDbfs: -7.0,
+            autoGainMaxDb: 11.0
         )
         
         let encoder = JSONEncoder()
@@ -97,6 +113,10 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(decodedSettings.bestOf, originalSettings.bestOf)
         XCTAssertEqual(decodedSettings.vadThreshold, originalSettings.vadThreshold)
         XCTAssertEqual(decodedSettings.launchAtLogin, originalSettings.launchAtLogin)
+        XCTAssertEqual(decodedSettings.autoGainEnabled, originalSettings.autoGainEnabled)
+        XCTAssertEqual(decodedSettings.autoGainWeakThresholdDbfs, originalSettings.autoGainWeakThresholdDbfs)
+        XCTAssertEqual(decodedSettings.autoGainTargetPeakDbfs, originalSettings.autoGainTargetPeakDbfs)
+        XCTAssertEqual(decodedSettings.autoGainMaxDb, originalSettings.autoGainMaxDb)
     }
 
     func testModifyingSettings() throws {
@@ -119,6 +139,49 @@ final class AppSettingsTests: XCTestCase {
 
         settings.launchAtLogin = true
         XCTAssertEqual(settings.launchAtLogin, true)
+
+        settings.autoGainEnabled = false
+        XCTAssertEqual(settings.autoGainEnabled, false)
+        settings.autoGainWeakThresholdDbfs = -25.0
+        XCTAssertEqual(settings.autoGainWeakThresholdDbfs, -25.0)
+        settings.autoGainTargetPeakDbfs = -6.0
+        XCTAssertEqual(settings.autoGainTargetPeakDbfs, -6.0)
+        settings.autoGainMaxDb = 9.0
+        XCTAssertEqual(settings.autoGainMaxDb, 9.0)
+    }
+
+    func testLegacyDecodingDefaultsAutoGainFields() throws {
+        let legacyJSON = """
+        {
+          "hotkeyConfig": {
+            "useCommand": true,
+            "useOption": true,
+            "useControl": false,
+            "useShift": false,
+            "keyCode": 0
+          },
+          "language": "ja",
+          "autoPunctuation": true,
+          "temperature": 0.0,
+          "beamSize": 5,
+          "noSpeechThreshold": 0.6,
+          "compressionRatioThreshold": 2.4,
+          "task": "transcribe",
+          "bestOf": 5,
+          "vadThreshold": 0.5,
+          "batchInterval": 10.0,
+          "silenceThreshold": -40.0,
+          "silenceDuration": 0.5,
+          "parallelism": 2,
+          "launchAtLogin": false
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: legacyJSON)
+        XCTAssertEqual(decoded.autoGainEnabled, true)
+        XCTAssertEqual(decoded.autoGainWeakThresholdDbfs, -18.0)
+        XCTAssertEqual(decoded.autoGainTargetPeakDbfs, -10.0)
+        XCTAssertEqual(decoded.autoGainMaxDb, 18.0)
     }
 
     func testLanguageSettings() throws {

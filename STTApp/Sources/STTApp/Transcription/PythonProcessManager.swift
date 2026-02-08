@@ -111,9 +111,25 @@ final class PythonProcessManager: @unchecked Sendable {
         Logger.shared.log("Error handler set up", level: .debug)
     }
     
-    func sendInput(_ text: String, language: String = "ja", temperature: Double = 0.0, beamSize: Int = 5, noSpeechThreshold: Double = 0.6, compressionRatioThreshold: Double = 2.4, task: String = "transcribe", bestOf: Int = 5, vadThreshold: Double = 0.5, autoPunctuation: Bool = true) -> Bool {
+    func sendInput(
+        _ text: String,
+        language: String = "ja",
+        temperature: Double = 0.0,
+        beamSize: Int = 5,
+        noSpeechThreshold: Double = 0.6,
+        compressionRatioThreshold: Double = 2.4,
+        task: String = "transcribe",
+        bestOf: Int = 5,
+        vadThreshold: Double = 0.5,
+        autoPunctuation: Bool = true,
+        autoGainEnabled: Bool = true,
+        autoGainWeakThresholdDbfs: Double = -18.0,
+        autoGainTargetPeakDbfs: Double = -10.0,
+        autoGainMaxDb: Double = 18.0
+    ) -> Bool {
         let punctuationFlag = autoPunctuation ? "1" : "0"
-        let input = "\(text)|\(language)|\(temperature)|\(beamSize)|\(noSpeechThreshold)|\(compressionRatioThreshold)|\(task)|\(bestOf)|\(vadThreshold)|\(punctuationFlag)"
+        let autoGainFlag = autoGainEnabled ? "1" : "0"
+        let input = "\(text)|\(language)|\(temperature)|\(beamSize)|\(noSpeechThreshold)|\(compressionRatioThreshold)|\(task)|\(bestOf)|\(vadThreshold)|\(punctuationFlag)|\(autoGainFlag)|\(autoGainWeakThresholdDbfs)|\(autoGainTargetPeakDbfs)|\(autoGainMaxDb)"
         Logger.shared.log("Sending input to Python: \(input)", level: .debug)
         guard let process = process, process.isRunning else {
             Logger.shared.log("Cannot send input: Python process is not running", level: .error)

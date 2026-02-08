@@ -131,7 +131,11 @@ private final class MockPythonProcessManager: PythonProcessManaging {
         task: String,
         bestOf: Int,
         vadThreshold: Double,
-        autoPunctuation: Bool
+        autoPunctuation: Bool,
+        autoGainEnabled: Bool,
+        autoGainWeakThresholdDbfs: Double,
+        autoGainTargetPeakDbfs: Double,
+        autoGainMaxDb: Double
     ) -> Bool {
         sendInputCallCount += 1
         return true
