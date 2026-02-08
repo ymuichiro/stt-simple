@@ -306,7 +306,6 @@ final class MultiProcessManager: @unchecked Sendable {
             )
             return
         }
-
         if isBlocked {
             Logger.shared.log(
                 "MultiProcessManager: recovery suppressed for process \(processIndex); status=\(status)",
