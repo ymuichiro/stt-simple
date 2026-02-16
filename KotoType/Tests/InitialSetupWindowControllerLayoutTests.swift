@@ -9,8 +9,10 @@ final class InitialSetupWindowControllerLayoutTests: XCTestCase {
             runtime: InitialSetupDiagnosticsService.Runtime(
                 checkAccessibilityPermission: { .denied },
                 checkMicrophonePermission: { .denied },
+                checkScreenRecordingPermission: { .denied },
                 requestAccessibilityPermission: {},
                 requestMicrophonePermission: { _ in },
+                requestScreenRecordingPermission: { _ in },
                 findExecutable: { _ in nil },
                 currentBundlePath: { "/Applications/KotoType.app" }
             )

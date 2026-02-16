@@ -40,6 +40,16 @@ final class PermissionCheckerTests: XCTestCase {
         )
     }
 
+    func testCheckScreenRecordingPermission() throws {
+        let checker = PermissionChecker.shared
+        let status = checker.checkScreenRecordingPermission()
+
+        XCTAssertTrue(
+            status == .granted || status == .denied,
+            "Screen recording permission status should be granted or denied"
+        )
+    }
+
     func testPermissionStatusEquality() throws {
         let grantedStatus = PermissionChecker.PermissionStatus.granted
         let deniedStatus = PermissionChecker.PermissionStatus.denied

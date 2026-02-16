@@ -14,7 +14,7 @@ final class InitialSetupDiagnosticsServiceTests: XCTestCase {
 
         let report = service.evaluate()
         XCTAssertTrue(report.canStartApplication)
-        XCTAssertEqual(report.items.filter(\.required).count, 3)
+        XCTAssertEqual(report.items.filter(\.required).count, 4)
         XCTAssertTrue(report.items.allSatisfy { $0.status == .passed })
     }
 
@@ -66,6 +66,23 @@ final class InitialSetupDiagnosticsServiceTests: XCTestCase {
         XCTAssertEqual(ffmpeg.status, .failed)
     }
 
+    func testEvaluateFailsWhenScreenRecordingDenied() throws {
+        let service = InitialSetupDiagnosticsService(
+            runtime: makeRuntime(
+                accessibility: .granted,
+                microphone: .granted,
+                screenRecording: .denied,
+                ffmpegPath: "/usr/local/bin/ffmpeg",
+                bundlePath: "/Applications/KotoType.app"
+            )
+        )
+
+        let report = service.evaluate()
+        XCTAssertFalse(report.canStartApplication)
+        let screenRecording = try XCTUnwrap(report.items.first { $0.id == "screenRecording" })
+        XCTAssertEqual(screenRecording.status, .failed)
+    }
+
     func testEvaluateAccessibilityDetailMentionsAppTranslocation() throws {
         let service = InitialSetupDiagnosticsService(
             runtime: makeRuntime(
@@ -79,7 +96,7 @@ final class InitialSetupDiagnosticsServiceTests: XCTestCase {
         let report = service.evaluate()
         let accessibility = try XCTUnwrap(report.items.first { $0.id == "accessibility" })
         XCTAssertEqual(accessibility.status, .failed)
-        XCTAssertTrue(accessibility.detail.contains("AppTranslocation"))
+        XCTAssertTrue(accessibility.detail.contains("App Translocation"))
         XCTAssertTrue(accessibility.detail.contains("/Applications"))
         XCTAssertTrue(accessibility.detail.contains("~/Applications"))
     }
@@ -117,14 +134,17 @@ final class InitialSetupDiagnosticsServiceTests: XCTestCase {
     private func makeRuntime(
         accessibility: PermissionChecker.PermissionStatus,
         microphone: PermissionChecker.PermissionStatus,
+        screenRecording: PermissionChecker.PermissionStatus = .granted,
         ffmpegPath: String?,
         bundlePath: String
     ) -> InitialSetupDiagnosticsService.Runtime {
         return InitialSetupDiagnosticsService.Runtime(
             checkAccessibilityPermission: { accessibility },
             checkMicrophonePermission: { microphone },
+            checkScreenRecordingPermission: { screenRecording },
             requestAccessibilityPermission: {},
             requestMicrophonePermission: { completion in completion(microphone) },
+            requestScreenRecordingPermission: { completion in completion(screenRecording) },
             findExecutable: { _ in ffmpegPath },
             currentBundlePath: { bundlePath }
         )

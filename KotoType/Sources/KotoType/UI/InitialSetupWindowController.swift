@@ -34,6 +34,7 @@ struct InitialSetupView: View {
 
     @State private var report = InitialSetupReport(items: [])
     @State private var isRequestingMicrophone = false
+    @State private var isRequestingScreenRecording = false
     @State private var isWaitingForAccessibilityUpdate = false
     @State private var shouldShowAccessibilityRestartHint = false
     @State private var hasCopiedAccessibilityResetCommand = false
@@ -113,6 +114,17 @@ struct InitialSetupView: View {
                     }
                 }
                 .disabled(isRequestingMicrophone)
+                Button("Grant Screen Recording") {
+                    isRequestingScreenRecording = true
+                    diagnosticsService.requestScreenRecordingPermission { _ in
+                        Task { @MainActor in
+                            isRequestingScreenRecording = false
+                            refreshChecks()
+                        }
+                    }
+                    openScreenRecordingSettings()
+                }
+                .disabled(isRequestingScreenRecording)
                 Button("Open System Settings") {
                     openAccessibilitySettings()
                 }
@@ -216,6 +228,12 @@ struct InitialSetupView: View {
 
     private func openAccessibilitySettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    private func openScreenRecordingSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
             NSWorkspace.shared.open(url)
         }
     }

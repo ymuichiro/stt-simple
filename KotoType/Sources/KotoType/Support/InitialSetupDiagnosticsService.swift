@@ -32,8 +32,10 @@ final class InitialSetupDiagnosticsService: @unchecked Sendable {
     struct Runtime {
         var checkAccessibilityPermission: () -> PermissionChecker.PermissionStatus
         var checkMicrophonePermission: () -> PermissionChecker.PermissionStatus
+        var checkScreenRecordingPermission: () -> PermissionChecker.PermissionStatus
         var requestAccessibilityPermission: () -> Void
         var requestMicrophonePermission: (@escaping @Sendable (PermissionChecker.PermissionStatus) -> Void) -> Void
+        var requestScreenRecordingPermission: (@escaping @Sendable (PermissionChecker.PermissionStatus) -> Void) -> Void
         var findExecutable: (String) -> String?
         var currentBundlePath: () -> String
     }
@@ -82,6 +84,19 @@ final class InitialSetupDiagnosticsService: @unchecked Sendable {
             )
         )
 
+        let screenRecordingStatus = runtime.checkScreenRecordingPermission()
+        items.append(
+            InitialSetupCheckItem(
+                id: "screenRecording",
+                title: "Screen Recording Permission",
+                detail: screenRecordingStatus == .granted
+                    ? "Granted"
+                    : "Required for screen context capture",
+                status: screenRecordingStatus == .granted ? .passed : .failed,
+                required: true
+            )
+        )
+
         let ffmpegPath = runtime.findExecutable("ffmpeg")
         items.append(
             InitialSetupCheckItem(
@@ -103,6 +118,10 @@ final class InitialSetupDiagnosticsService: @unchecked Sendable {
     func requestMicrophonePermission(completion: @escaping @Sendable (PermissionChecker.PermissionStatus) -> Void) {
         runtime.requestMicrophonePermission(completion)
     }
+
+    func requestScreenRecordingPermission(completion: @escaping @Sendable (PermissionChecker.PermissionStatus) -> Void) {
+        runtime.requestScreenRecordingPermission(completion)
+    }
 }
 
 extension InitialSetupDiagnosticsService.Runtime {
@@ -110,9 +129,13 @@ extension InitialSetupDiagnosticsService.Runtime {
         InitialSetupDiagnosticsService.Runtime(
             checkAccessibilityPermission: { PermissionChecker.shared.checkAccessibilityPermission() },
             checkMicrophonePermission: { PermissionChecker.shared.checkMicrophonePermission() },
+            checkScreenRecordingPermission: { PermissionChecker.shared.checkScreenRecordingPermission() },
             requestAccessibilityPermission: { PermissionChecker.shared.requestAccessibilityPermission() },
             requestMicrophonePermission: { completion in
                 PermissionChecker.shared.requestMicrophonePermission(completion: completion)
+            },
+            requestScreenRecordingPermission: { completion in
+                PermissionChecker.shared.requestScreenRecordingPermission(completion: completion)
             },
             findExecutable: { name in
                 InitialSetupDiagnosticsService.findExecutable(named: name)

@@ -48,4 +48,28 @@ final class PermissionChecker: @unchecked Sendable {
             }
         }
     }
+
+    func checkScreenRecordingPermission() -> PermissionStatus {
+        guard #available(macOS 10.15, *) else {
+            return .granted
+        }
+        return CGPreflightScreenCaptureAccess() ? .granted : .denied
+    }
+
+    func requestScreenRecordingPermission(completion: @escaping @Sendable (PermissionStatus) -> Void) {
+        guard #available(macOS 10.15, *) else {
+            completion(.granted)
+            return
+        }
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            let granted = CGRequestScreenCaptureAccess()
+            let status: PermissionStatus = granted && CGPreflightScreenCaptureAccess()
+                ? .granted
+                : self.checkScreenRecordingPermission()
+            DispatchQueue.main.async {
+                completion(status)
+            }
+        }
+    }
 }
