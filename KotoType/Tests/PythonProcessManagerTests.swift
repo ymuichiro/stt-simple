@@ -157,6 +157,29 @@ final class PythonProcessManagerTests: XCTestCase {
         XCTAssertNil(environment["KOTOTYPE_MODEL_LOAD_WAIT_TIMEOUT_SECONDS"])
     }
 
+    func testRuntimeEnvironmentForAppBundlePrependsPackageManagerPaths() {
+        let environment = PythonProcessManager.runtimeEnvironment(
+            base: [
+                "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+            ],
+            bundlePath: "/Applications/KotoType.app"
+        )
+
+        XCTAssertEqual(
+            environment["PATH"],
+            "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        )
+    }
+
+    func testMergedSearchPathAvoidsDuplicates() {
+        let path = PythonProcessManager.mergedSearchPath(
+            basePath: "/opt/homebrew/bin:/usr/bin:/bin",
+            prepending: ["/opt/homebrew/bin", "/usr/local/bin"]
+        )
+
+        XCTAssertEqual(path, "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin")
+    }
+
     private func makeRuntime(
         currentDirectoryPath: String,
         bundlePath: String,
