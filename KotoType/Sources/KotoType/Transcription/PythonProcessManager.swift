@@ -283,8 +283,30 @@ extension PythonProcessManager {
             environment["KOTOTYPE_MAX_ACTIVE_SERVERS"] = "1"
             environment["KOTOTYPE_MAX_PARALLEL_MODEL_LOADS"] = "1"
             environment["KOTOTYPE_MODEL_LOAD_WAIT_TIMEOUT_SECONDS"] = "120"
+            environment["PATH"] = mergedSearchPath(
+                basePath: environment["PATH"],
+                prepending: ["/opt/homebrew/bin", "/usr/local/bin"]
+            )
         }
         return environment
+    }
+
+    static func mergedSearchPath(basePath: String?, prepending directories: [String]) -> String {
+        let existing = (basePath ?? "")
+            .split(separator: ":")
+            .map(String.init)
+
+        var merged: [String] = []
+        var seen: Set<String> = []
+
+        for candidate in directories + existing {
+            guard !candidate.isEmpty else { continue }
+            if seen.insert(candidate).inserted {
+                merged.append(candidate)
+            }
+        }
+
+        return merged.joined(separator: ":")
     }
 
     static func resolveExecutable(named name: String) -> String? {
